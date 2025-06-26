@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Gestor de Pagos Mensuales</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="theme-color" content="#667eea">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192x192.png">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; 
+            color: #1f2937; 
+            overscroll-behavior-x: none; 
+        }
+        .dark body {
+            background-color: #1f2937; 
+            color: #f3f4f6; 
+        }
+        .dark .summary-card {
+            background: linear-gradient(135deg, #3730a3 0%, #5b21b6 100%); 
+        }
+        .dark .bg-white { background-color: #374151; } 
+        .dark .text-slate-700, .dark .text-slate-800 { color: #d1d5db; } 
+        .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-400 { color: #9ca3af; }
+        .dark .border-slate-300 { border-color: #4b5563; }
+        .dark .bg-slate-100 { background-color: #374151; }
+        .dark .bg-slate-200 { background-color: #2d3748; }
+        .dark .hover\:bg-slate-200:hover { background-color: #4b5563; }
+        .dark .text-indigo-600 { color: #a5b4fc; }
+        .dark .border-b { border-color: #4b5563; }
+        .dark .payment-item { background-color: #374151; }
+        
+        .dark #historyView { background-color: #1e293b; } 
+        .dark .history-month-card { background-color: #334155; border-color: #4b5563;} 
+        .dark .history-month-card h3 { color: #c7d2fe; } 
+        .dark .history-item { border-color: #4b5563;} 
+        .dark .history-item p, .dark .history-month-summary p { color: #cbd5e1; } 
+        .dark .history-item .text-slate-500 { color: #94a3b8; } 
+
+
+        .dark input[type="text"],
+        .dark input[type="number"]{
+            color: #e5e7eb; 
+            background-color: #4b5563; 
+            border-color: #6b7280;
+        }
+        .dark input::placeholder {
+            color: #9ca3af;
+        }
+          input[type="text"],
+          input[type="number"] {
+            color: #1f2937; 
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        .dark ::-webkit-scrollbar-track { background: #2d3748; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #555; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #444; }
+
+        .payment-item { 
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; 
+            position: relative; 
+            overflow: hidden; /* Important for swipe effect */
+        }
+        .payment-item:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+        .dark .payment-item:hover { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -2px rgba(0,0,0,0.25); }
+        
+        #addPaymentFormContainer { transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; overflow: hidden; opacity: 0; }
+        #addPaymentFormContainer.visible { max-height: 500px; opacity: 1; }
+        .summary-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .month-selector-btn.active { background-color: #4f46e5; color: white; }
+        .month-selector-btn { transition: background-color 0.2s, color 0.2s; }
+
+        /* --- Swipe Styles --- */
+        .payment-item-content {
+            transition: transform 0.2s ease-out;
+            touch-action: pan-y; /* Allow vertical scroll */
+            position: relative;
+            z-index: 2;
+            background: inherit; /* Inherit parent background */
+        }
+        .swipe-action-background {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            color: white;
+            z-index: 1;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
+        }
+        .swipe-right {
+            background-color: #22c55e; /* green-500 */
+            justify-content: flex-start;
+            padding-left: 1.25rem;
+        }
+        .dark .swipe-right { background-color: #16a34a; /* green-600 */ }
+        .swipe-left {
+            background-color: #f97316; /* orange-500 */
+            justify-content: flex-end;
+            padding-right: 1.25rem;
+        }
+        .dark .swipe-left { background-color: #ea580c; /* orange-600 */ }
+        /* --- End Swipe Styles --- */
+
+
+        .payment-item.marked-as-paid-animation { animation: markAsPaidAnimation 0.6s ease-out; }
+        .dark .payment-item.marked-as-paid-animation { animation: darkMarkAsPaidAnimation 0.6s ease-out; }
+        .payment-item.marked-as-pending-animation { animation: markAsPendingAnimation 0.6s ease-out; }
+        .dark .payment-item.marked-as-pending-animation { animation: darkMarkAsPendingAnimation 0.6s ease-out; }
+
+        @keyframes markAsPaidAnimation {
+            0% { background-color: #c6f6d5; } 100% { background-color: #ffffff; }
+        }
+        @keyframes darkMarkAsPaidAnimation {
+            0% { background-color: #2f855a; } 100% { background-color: #374151; }
+        }
+        @keyframes markAsPendingAnimation {
+            0% { background-color: #fed7d7; } 100% { background-color: #ffffff; }
+        }
+        @keyframes darkMarkAsPendingAnimation {
+            0% { background-color: #c53030; } 100% { background-color: #374151; }
+        }
+
+        #longPressModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); display: flex;
+            justify-content: center; align-items: center; z-index: 1050; 
+            opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s ease;
+        }
+        #longPressModal.visible { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: white; padding: 20px; border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 90%; max-width: 300px;
+        }
+        .dark .modal-content { background-color: #374151; }
+        .modal-actions button {
+            display: block; width: 100%; padding: 10px; margin-top: 10px;
+            border-radius: 6px; font-weight: 500; transition: background-color 0.2s;
+        }
+        .modal-actions button.edit { background-color: #f59e0b; color: white; } 
+        .modal-actions button.edit:hover { background-color: #d97706; }
+        .dark .modal-actions button.edit { background-color: #d97706; }
+        .dark .modal-actions button.edit:hover { background-color: #b45309; }
+        .modal-actions button.delete { background-color: #ef4444; color: white; } 
+        .modal-actions button.delete:hover { background-color: #dc2626; }
+        .dark .modal-actions button.delete { background-color: #dc2626; }
+        .dark .modal-actions button.delete:hover { background-color: #b91c1c; }
+        .modal-actions button.cancel { background-color: #6b7280; color: white; } 
+        .modal-actions button.cancel:hover { background-color: #4b5563; } 
+        .dark .modal-actions button.cancel { background-color: #4b5563; }
+        .dark .modal-actions button.cancel:hover { background-color: #374151; }
+
+        #sideMenu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 1040; 
+        }
+        #sideMenu.open { transform: translateX(0); }
+        #menuOverlay {
+            transition: opacity 0.3s ease-in-out;
+            z-index: 1030; 
+        }
+        #historyView {
+            z-index: 1020; 
+            background-color: #f0f4f8; 
+        }
+        .history-item { border-bottom-width: 1px; }
+        .history-item:last-child { border-bottom-width: 0px; }
+        .history-month-header { cursor: pointer; transition: background-color 0.2s; }
+        .history-month-header:hover { background-color: #e9e9f0; }
+        .dark .history-month-header:hover { background-color: #3e4c62; }
+        .details-toggle-icon { transition: transform 0.3s ease-in-out; }
+        .details-toggle-icon.expanded { transform: rotate(90deg); }
+    </style>
+</head>
+<body class="antialiased">
+    <input type="file" id="importFile" accept=".json" style="display: none;">
+
+    <div id="menuOverlay" class="fixed inset-0 bg-black opacity-0 hidden"></div>
+    <div id="sideMenu" class="fixed top-0 left-0 h-full w-64 sm:w-72 bg-white dark:bg-slate-800 shadow-xl p-4">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400">Menú</h2>
+            <button id="closeMenuBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav>
+            <ul class="space-y-1">
+                <li>
+                    <button id="enableNotificationsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        <span id="notificationsBtnText">Activar Notificaciones</span>
+                    </button>
+                </li>
+                <li>
+                    <a href="#" id="showHistoryBtn" class="flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Historial
+                    </a>
+                </li>
+                <li>
+                    <button id="exportDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                        Exportar Datos
+                    </button>
+                </li>
+                <li>
+                    <button id="importDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        Importar Datos
+                    </button>
+                </li>
+                <li>
+                    <button id="exportCalendarBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        Exportar a Calendario
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div id="mainContent" class="container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
+        <header class="mb-6 text-center relative">
+            <button id="hamburgerBtn" class="absolute top-0 left-0 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Abrir menú">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+            <h1 class="text-4xl font-bold">Gestor de Pagos Mensuales</h1>
+            <p class="text-slate-500 mt-2">Organiza tus finanzas y no olvides ningún pago.</p>
+            <button id="themeToggleBtn" class="absolute top-0 right-0 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Cambiar tema">
+                <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+            </button>
+        </header>
+
+        <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
+            <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
+                &lt; Anterior
+            </button>
+            <div class="text-center">
+                <p class="text-sm font-medium text-slate-500">Visualizando:</p>
+                <p id="displayedMonthLabel" class="text-lg font-bold text-indigo-600">Mes Actual</p>
+            </div>
+            <button id="nextMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm" title="Mes Siguiente">
+                Siguiente &gt;
+            </button>
+        </div>
+        
+        <div id="paymentSummary" class="mb-6 summary-card text-white shadow-lg rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+            <div class="text-center">
+                <p class="text-sm uppercase tracking-wider opacity-80">Total Estimado (<span id="summaryTotalLabel"></span>)</p>
+                <p id="totalAmountDisplay" class="text-2xl font-bold">$0.00</p>
+            </div>
+            <div class="text-center">
+                <p class="text-sm uppercase tracking-wider opacity-80">Pendiente (<span id="summaryPendingLabel"></span>)</p>
+                <p id="pendingAmountDisplay" class="text-2xl font-bold text-yellow-300">$0.00</p>
+            </div>
+        </div>
+        
+        <div id="notificationsArea" class="mb-6 space-y-3"></div>
+
+        <div class="mb-6 text-center">
+             <button id="toggleFormBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                 </svg>
+                 <span id="toggleFormBtnText">Agregar Nuevo Pago</span>
+             </button>
+        </div>
+
+        <div id="addPaymentFormContainer" class="mb-8">
+             <div class="bg-white shadow-xl rounded-xl p-6">
+                 <h2 id="formTitle" class="text-2xl font-semibold border-b pb-3">Agregar Nuevo Pago</h2>
+                 <form id="addPaymentForm" class="space-y-4 mt-5">
+                     <input type="hidden" id="editingPaymentId">
+                     <div>
+                         <label for="paymentName" class="block text-sm font-medium">Nombre del Pago:</label>
+                         <input type="text" id="paymentName" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: Tarjeta de Crédito Visa">
+                     </div>
+                     <div>
+                         <label for="paymentDay" class="block text-sm font-medium">Día de Vencimiento (1-31):</label>
+                         <input type="number" id="paymentDay" min="1" max="31" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 15">
+                     </div>
+                     <div>
+                         <label for="paymentAmount" class="block text-sm font-medium">Monto (ARS, opcional):</label>
+                         <input type="number" id="paymentAmount" step="0.01" min="0" class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 5000.00">
+                     </div>
+                     <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                         <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg inline-flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                             <span id="addEditButtonText">Guardar Pago</span>
+                         </button>
+                         <button type="button" id="cancelAddBtn" class="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg inline-flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                             Cancelar
+                         </button>
+                     </div>
+                 </form>
+             </div>
+        </div>
+
+        <div>
+            <h2 id="paymentsListTitle" class="text-2xl font-semibold mb-5 border-b pb-3">Pagos Registrados (Mes Actual)</h2>
+            <div id="paymentsList" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="historyView" class="hidden fixed inset-0 p-4 sm:p-6 md:p-8 overflow-y-auto">
+        <div class="max-w-3xl mx-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Historial de Gastos</h1>
+                <button id="closeHistoryBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                    Cerrar Historial
+                </button>
+            </div>
+            <div id="historicalPaymentsListContainer" class="space-y-6">
+            </div>
+        </div>
+    </div>
+
+    <div id="longPressModal">
+        <div class="modal-content">
+            <p id="modalItemName" class="text-center font-semibold mb-4"></p>
+            <div class="modal-actions space-y-2">
+                <button id="modalEditBtn" class="edit">Editar</button>
+                <button id="modalDeleteBtn" class="delete">Eliminar</button>
+                <button id="modalCancelBtn" class="cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Application State
+        let payments = [];
+        let selectedMonthOffset = 0; 
+        const MAX_NEXT_MONTHS = 2; 
+        const MAX_PREV_MONTHS = -2; 
+        let longPressTimer = null;
+        let longPressTargetId = null;
+        const LONG_PRESS_DURATION = 700; // ms
+        let lastScrollY = 0; 
+
+        // --- Swipe State ---
+        let swipeState = {
+            startX: 0,
+            currentX: 0,
+            isSwiping: false,
+            targetEl: null,
+            id: null,
+            isPaid: false
+        };
+        const SWIPE_THRESHOLD = 60; // pixels
+
+        // DOM Elements
+        const htmlEl = document.documentElement;
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const paymentNameInput = document.getElementById('paymentName');
+        const paymentDayInput = document.getElementById('paymentDay');
+        const paymentAmountInput = document.getElementById('paymentAmount');
+        const paymentsListEl = document.getElementById('paymentsList');
+        const notificationsAreaEl = document.getElementById('notificationsArea');
+        const totalAmountDisplayEl = document.getElementById('totalAmountDisplay');
+        const pendingAmountDisplayEl = document.getElementById('pendingAmountDisplay');
+        const toggleFormBtn = document.getElementById('toggleFormBtn');
+        const toggleFormBtnText = document.getElementById('toggleFormBtnText');
+        const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
+        const addPaymentForm = document.getElementById('addPaymentForm');
+        const cancelAddBtn = document.getElementById('cancelAddBtn');
+        const addEditButtonTextEl = document.getElementById('addEditButtonText');
+        const formTitleEl = document.getElementById('formTitle');
+        const editingPaymentIdInput = document.getElementById('editingPaymentId');
+        const prevMonthBtn = document.getElementById('prevMonthBtn');
+        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const displayedMonthLabelEl = document.getElementById('displayedMonthLabel');
+        const paymentsListTitleEl = document.getElementById('paymentsListTitle');
+        const summaryTotalLabelEl = document.getElementById('summaryTotalLabel');
+        const summaryPendingLabelEl = document.getElementById('summaryPendingLabel');
+        const longPressModalEl = document.getElementById('longPressModal');
+        const modalItemNameEl = document.getElementById('modalItemName');
+        const modalEditBtn = document.getElementById('modalEditBtn');
+        const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        // Menu & Import/Export DOM Elements
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const showHistoryBtn = document.getElementById('showHistoryBtn');
+        const historyView = document.getElementById('historyView');
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        const historicalPaymentsListContainerEl = document.getElementById('historicalPaymentsListContainer');
+        const mainContentEl = document.getElementById('mainContent');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const importFileEl = document.getElementById('importFile');
+        const exportCalendarBtn = document.getElementById('exportCalendarBtn');
+
+        // --- Notification Elements ---
+        const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
+        const notificationsBtnText = document.getElementById('notificationsBtnText');
+
+        // --- Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => console.log('Service Worker registrado con éxito:', registration))
+                    .catch(error => console.log('Error en el registro de Service Worker:', error));
+            });
+        }
+
+        // --- Theme Management ---
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                htmlEl.classList.add('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                htmlEl.classList.remove('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        };
+
+        const toggleTheme = () => {
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        };
+
+        // --- Utility Functions ---
+        const getMonthYearKey = (offsetOrDate) => {
+            const date = (offsetOrDate instanceof Date) ? new Date(offsetOrDate) : new Date();
+            if (typeof offsetOrDate === 'number') {
+                 date.setMonth(date.getMonth() + offsetOrDate);
+            }
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}`;
+        };
+        
+        const getMonthName = (offsetOrDate) => {
+            const date = (offsetOrDate instanceof Date) ? new Date(offsetOrDate) : new Date();
+             if (typeof offsetOrDate === 'number') {
+                 date.setMonth(date.getMonth() + offsetOrDate);
+            }
+            return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
+        }
+
+        const formatCurrency = (amount) => {
+            if (amount === null || isNaN(amount)) return '$ --';
+            return `$${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        };
+        
+        const generateAndDownloadICS = () => {
+            const displayMonthKey = getMonthYearKey(selectedMonthOffset);
+            const [year, month] = displayMonthKey.split('-');
+            const monthName = getMonthName(selectedMonthOffset);
+
+            const activePaymentsForMonth = payments.filter(p => p.createdAt && p.createdAt <= displayMonthKey);
+
+            if (activePaymentsForMonth.length === 0) {
+                createPageNotification("No hay pagos en este mes para exportar.", "info", "Calendario");
+                return;
+            }
+
+            let icsContent = [
+                'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//GestorDePagos//App v1.0//ES', 'CALSCALE:GREGORIAN'
+            ];
+
+            activePaymentsForMonth.forEach(payment => {
+                const dateForValidation = new Date(parseInt(year), parseInt(month) - 1, payment.dueDate);
+                if (dateForValidation.getMonth() !== parseInt(month) - 1) {
+                    console.warn(`Saltando pago "${payment.name}" con fecha inválida para el mes ${month}.`);
+                    return;
+                }
+
+                const eventDate = `${year}${String(month).padStart(2, '0')}${String(payment.dueDate).padStart(2, '0')}`;
+                const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
+                const description = effectiveAmount !== null ? `Monto estimado: ${formatCurrency(effectiveAmount)}.` : 'Monto no especificado.';
+
+                icsContent.push(
+                    'BEGIN:VEVENT',
+                    `UID:${payment.id}-${displayMonthKey}@gestordepagos.app`,
+                    `DTSTAMP:${new Date().toISOString().replace(/[-:.]/g, '')}Z`,
+                    `DTSTART;VALUE=DATE:${eventDate}`,
+                    `DTEND;VALUE=DATE:${eventDate}`,
+                    `SUMMARY:Vencimiento: ${payment.name}`,
+                    `DESCRIPTION:${description.replace(/,/g, '\\,')}`,
+                    'BEGIN:VALARM', 'TRIGGER:-PT15H', 'ACTION:DISPLAY', 'DESCRIPTION:Recordatorio de vencimiento', 'END:VALARM',
+                    'END:VEVENT'
+                );
+            });
+
+            icsContent.push('END:VCALENDAR');
+
+            const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            const safeFileName = monthName.replace(/ /g, '_').replace('de_', '');
+            link.setAttribute('download', `Vencimientos_${safeFileName}.ics`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        };
+
+        // --- Data Persistence ---
+        const loadPaymentsFromStorage = () => {
+            try {
+                const storedPayments = localStorage.getItem('monthlyPaymentsApp');
+                if (storedPayments) {
+                    payments = JSON.parse(storedPayments);
+                    payments.forEach(p => {
+                        if (!p.paidMonths) p.paidMonths = {};
+                        if (!p.amountOverrides) p.amountOverrides = {};
+                        if (!p.notificationsSent) p.notificationsSent = {}; 
+                        if (!p.createdAt) p.createdAt = getMonthYearKey(new Date(parseInt(p.id))); 
+                    });
+                }
+            } catch (e) {
+                console.error("Error al cargar los pagos:", e);
+                createPageNotification("No se pudieron cargar los datos guardados.", "error", "Error de Almacenamiento");
+            }
+        };
+
+        const savePaymentsToStorage = () => {
+            try {
+                localStorage.setItem('monthlyPaymentsApp', JSON.stringify(payments));
+            } catch (e) {
+                console.error("Error al guardar los pagos:", e);
+                createPageNotification("No se pudieron guardar los datos.", "error", "Error de Almacenamiento");
+            }
+        };
+        
+        // --- Logic Functions (Calculation, Reminders, UI, etc.) ---
+        const calculateAndDisplaySummary = () => {
+            const displayMonthKey = getMonthYearKey(selectedMonthOffset);
+            const activePaymentsForMonth = payments.filter(p => p.createdAt && p.createdAt <= displayMonthKey);
+            const totalAmount = activePaymentsForMonth.reduce((sum, p) => sum + (getEffectiveAmount(p, displayMonthKey) || 0), 0);
+            const pendingAmount = activePaymentsForMonth
+                .filter(p => !(p.paidMonths && p.paidMonths[displayMonthKey] === true))
+                .reduce((sum, p) => sum + (getEffectiveAmount(p, displayMonthKey) || 0), 0);
+            totalAmountDisplayEl.textContent = formatCurrency(totalAmount);
+            pendingAmountDisplayEl.textContent = formatCurrency(pendingAmount);
+        };
+
+        const checkReminders = () => {
+            notificationsAreaEl.innerHTML = '';
+            const today = new Date();
+            const currentDay = today.getDate();
+            const currentMonthKey = getMonthYearKey(0);
+            const displayMonthKey = getMonthYearKey(selectedMonthOffset);
+            if (currentMonthKey !== displayMonthKey) return; // Only show for current month view
+
+            const upcomingPayments = payments.filter(p => {
+                const isPending = !(p.paidMonths && p.paidMonths[currentMonthKey]);
+                // Check if payment is active for the current month
+                const isActive = p.createdAt && p.createdAt <= currentMonthKey;
+                return isActive && isPending && p.dueDate >= currentDay && p.dueDate <= currentDay + 3;
+            });
+            
+            upcomingPayments.forEach(p => {
+                const daysUntilDue = p.dueDate - currentDay;
+                const message = daysUntilDue === 0 ? `El pago de <strong>${p.name}</strong> vence <strong>hoy</strong>.` : `El pago de <strong>${p.name}</strong> vence en <strong>${daysUntilDue} día(s)</strong>.`;
+                createPageNotification(message, 'warning', 'Recordatorio');
+
+                // --- NEW: Trigger system notification ---
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const notificationKey = `${p.id}-${currentMonthKey}`;
+                    if (!p.notificationsSent[notificationKey]) {
+                        navigator.serviceWorker.ready.then(registration => {
+                            registration.showNotification(`Vencimiento: ${p.name}`, {
+                                body: daysUntilDue === 0 ? `Tu pago vence hoy.` : `Tu pago vence en ${daysUntilDue} día(s).`,
+                                icon: 'images/icon-192x192.png', // You should have this icon
+                                tag: notificationKey // Tag prevents multiple notifications for the same payment
+                            });
+                        });
+                        p.notificationsSent[notificationKey] = true;
+                        savePaymentsToStorage(); // Persist that notification was sent
+                    }
+                }
+            });
+        };
+
+        
+        const createPageNotification = (message, type = 'info', title = 'Notificación') => {
+            const notifId = `notif-${Date.now()}`;
+            const typeClasses = {
+                info: { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-800 dark:text-blue-200', border: 'border-blue-500', icon: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>' },
+                success: { bg: 'bg-green-100 dark:bg-green-900', text: 'text-green-800 dark:text-green-200', border: 'border-green-500', icon: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>' },
+                warning: { bg: 'bg-yellow-100 dark:bg-yellow-900', text: 'text-yellow-800 dark:text-yellow-200', border: 'border-yellow-500', icon: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.636-1.214 2.85-1.214 3.486 0l5.58 10.655c.636 1.214-.474 2.746-1.743 2.746H4.42c-1.27 0-2.379-1.532-1.743-2.746l5.58-10.655zM10 14a1 1 0 100-2 1 1 0 000 2zm-1-5a1 1 0 011-1h.01a1 1 0 010 2H10a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>' },
+                error: { bg: 'bg-red-100 dark:bg-red-900', text: 'text-red-800 dark:text-red-200', border: 'border-red-500', icon: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>' }
+            };
+            const classes = typeClasses[type] || typeClasses['info'];
+            const notificationEl = document.createElement('div');
+            notificationEl.id = notifId;
+            notificationEl.className = `${classes.bg} ${classes.text} border-l-4 ${classes.border} p-4 rounded-md shadow-md flex items-start`;
+            notificationEl.innerHTML = `<div class="flex-shrink-0">${classes.icon}</div><div class="ml-3"><p class="font-bold">${title}</p><p class="text-sm">${message}</p></div><button class="ml-auto -mx-1.5 -my-1.5 bg-transparent rounded-lg focus:ring-2 focus:ring-gray-400 p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 inline-flex h-8 w-8" onclick="document.getElementById('${notifId}').remove()"><span class="sr-only">Dismiss</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>`;
+            notificationsAreaEl.appendChild(notificationEl);
+        };
+        
+        const openMenu = () => { sideMenu.classList.add('open'); menuOverlay.classList.remove('hidden'); menuOverlay.style.opacity = '0.5'; };
+        const closeMenu = () => { sideMenu.classList.remove('open'); menuOverlay.style.opacity = '0'; setTimeout(() => { menuOverlay.classList.add('hidden'); }, 300); };
+        
+        const resetForm = () => { addPaymentForm.reset(); editingPaymentIdInput.value = ''; formTitleEl.textContent = 'Agregar Nuevo Pago'; addEditButtonTextEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>Guardar Pago'; };
+
+        const openLongPressModal = (paymentId) => { const payment = payments.find(p => p.id === paymentId); if (payment) { modalItemNameEl.textContent = payment.name; longPressModalEl.classList.add('visible'); } };
+        const closeLongPressModal = () => { longPressModalEl.classList.remove('visible'); longPressTargetId = null; };
+        const showConfirmationModal = (message, onConfirm) => { if (confirm(message)) { onConfirm(); } };
+
+        const handleAddOrUpdatePayment = (e) => {
+            e.preventDefault();
+            const id = editingPaymentIdInput.value;
+            const name = paymentNameInput.value.trim();
+            const dueDate = parseInt(paymentDayInput.value);
+            const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
+            if (!name || !dueDate) return;
+            if (id) {
+                const pIndex = payments.findIndex(p => p.id === id);
+                if (pIndex > -1) payments[pIndex] = { ...payments[pIndex], name, dueDate, amount };
+            } else {
+                payments.push({ id: Date.now().toString(), name, dueDate, amount, paidMonths: {}, amountOverrides: {}, notificationsSent: {}, createdAt: getMonthYearKey(selectedMonthOffset) });
+            }
+            savePaymentsToStorage(); renderAll(true); addPaymentFormContainer.classList.remove('visible'); toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; resetForm();
+        };
+
+        const deletePayment = (id) => { payments = payments.filter(p => p.id !== id); savePaymentsToStorage(); renderAll(true); };
+
+        const editPayment = (id) => {
+            const payment = payments.find(p => p.id === id); if (!payment) return;
+            editingPaymentIdInput.value = payment.id; paymentNameInput.value = payment.name; paymentDayInput.value = payment.dueDate; paymentAmountInput.value = payment.amount;
+            formTitleEl.textContent = 'Editar Pago'; addEditButtonTextEl.textContent = 'Actualizar Pago';
+            if (!addPaymentFormContainer.classList.contains('visible')) { addPaymentFormContainer.classList.add('visible'); toggleFormBtnText.textContent = 'Ocultar Formulario'; }
+            paymentNameInput.focus(); window.scrollTo({ top: addPaymentFormContainer.offsetTop, behavior: 'smooth' });
+        };
+        
+        const togglePaymentStatus = (id, markAsPaid) => {
+            const paymentIndex = payments.findIndex(p => p.id === id); if (paymentIndex === -1) return;
+            const payment = payments[paymentIndex]; const displayMonthKey = getMonthYearKey(selectedMonthOffset);
+            if (!payment.paidMonths) payment.paidMonths = {};
+            payment.paidMonths[displayMonthKey] = markAsPaid;
+            const paymentItemEl = paymentsListEl.querySelector(`[data-id="${id}"]`);
+            if (paymentItemEl) {
+                const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation';
+                paymentItemEl.classList.add(animationClass);
+                setTimeout(() => paymentItemEl.classList.remove(animationClass), 600);
+            }
+            savePaymentsToStorage();
+            setTimeout(() => { renderAll(true); }, 150);
+        };
+
+        const getEffectiveAmount = (payment, monthKey) => payment.amountOverrides?.[monthKey] ?? payment.amount;
+        
+        const renderHistory = () => {
+            historicalPaymentsListContainerEl.innerHTML = ''; const groupedByMonth = {};
+            payments.forEach(p => Object.keys(p.paidMonths).forEach(monthKey => { if(p.paidMonths[monthKey]) { if(!groupedByMonth[monthKey]) groupedByMonth[monthKey] = []; groupedByMonth[monthKey].push(p); } }));
+            const sortedMonthKeys = Object.keys(groupedByMonth).sort().reverse();
+            if (sortedMonthKeys.length === 0) { historicalPaymentsListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay historial.</p></div>`; return; }
+            sortedMonthKeys.forEach(monthKey => {
+                const monthPayments = groupedByMonth[monthKey];
+                const monthDate = new Date(monthKey + '-02'); const monthName = getMonthName(monthDate);
+                const totalPaid = monthPayments.reduce((sum, p) => sum + (getEffectiveAmount(p, monthKey) || 0), 0);
+                const monthCard = document.createElement('div');
+                monthCard.className = 'history-month-card bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden';
+                monthCard.innerHTML = `<div class="history-month-header p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-700"><div><h3 class="text-xl font-semibold text-indigo-700 dark:text-indigo-400">${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</h3><p class="text-sm text-slate-500 dark:text-slate-400">Total Pagado: <span class="font-bold">${formatCurrency(totalPaid)}</span></p></div><svg class="details-toggle-icon h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div><div class="history-details p-4 space-y-3 hidden"></div>`;
+                const detailsContainer = monthCard.querySelector('.history-details');
+                monthPayments.sort((a,b) => a.dueDate - b.dueDate).forEach(p => {
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'history-item flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-600';
+                    itemEl.innerHTML = `<div><p class="font-medium text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-sm text-slate-500 dark:text-slate-400">Vencía el día ${p.dueDate}</p></div><p class="font-semibold text-green-600 dark:text-green-400">${formatCurrency(getEffectiveAmount(p, monthKey))}</p>`;
+                    detailsContainer.appendChild(itemEl);
+                });
+                monthCard.querySelector('.history-month-header').addEventListener('click', (e) => { detailsContainer.classList.toggle('hidden'); e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded'); });
+                historicalPaymentsListContainerEl.appendChild(monthCard);
+            });
+        };
+        
+        const exportData = () => { if (payments.length === 0) return createPageNotification("No hay datos para exportar.", "info"); const dataStr = JSON.stringify(payments, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob); const link = document.createElement('a'); link.href = url; link.download = 'gestor_pagos_backup.json'; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); createPageNotification("Datos exportados.", "success"); };
+        const importData = (event) => {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedPayments = JSON.parse(e.target.result); if (!Array.isArray(importedPayments)) throw new Error("Formato inválido.");
+                    showConfirmationModal("Esto reemplazará todos los datos actuales. ¿Continuar?", () => { payments = importedPayments; savePaymentsToStorage(); renderAll(); createPageNotification("Datos importados.", "success"); });
+                } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
+            };
+            reader.readAsText(file);
+        };
+        
+        // --- Core Rendering ---
+        const renderPayments = () => {
+            paymentsListEl.innerHTML = ''; 
+            const displayMonthKey = getMonthYearKey(selectedMonthOffset);
+            const activePaymentsForMonth = payments.filter(p => p.createdAt && p.createdAt <= displayMonthKey);
+            if (activePaymentsForMonth.length === 0) {
+                paymentsListEl.innerHTML = `<div class="text-center py-10"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg><p class="mt-3 text-sm font-medium">No hay pagos para este mes.</p></div>`;
+                calculateAndDisplaySummary();
+                return;
+            }
+            const sortedPayments = activePaymentsForMonth.sort((a, b) => a.dueDate - b.dueDate);
+            sortedPayments.sort((a,b) => (a.paidMonths[displayMonthKey] ? 1 : 0) - (b.paidMonths[displayMonthKey] ? 1 : 0));
+
+            sortedPayments.forEach(payment => {
+                const isPaid = payment.paidMonths && payment.paidMonths[displayMonthKey];
+                const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
+                const paymentItem = document.createElement('div');
+                paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`; // Removed padding from here
+                paymentItem.dataset.id = payment.id;
+                paymentItem.dataset.isPaid = isPaid ? 'true' : 'false';
+
+                paymentItem.innerHTML = `
+                    <div class="swipe-action-background swipe-right">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <div class="swipe-action-background swipe-left">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6 6m0-6l6-6" /></svg>
+                    </div>
+                    <div class="payment-item-content p-5 w-full flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <div class="flex-grow">
+                           <h3 class="text-lg font-semibold">${payment.name}</h3>
+                           <p class="text-sm">Vence el día: <span class="font-medium">${payment.dueDate}</span> | Monto: ${formatCurrency(effectiveAmount)}</p>
+                           <p class="mt-1 text-xs font-semibold ${isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isPaid ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>Pagado</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 102 0V5zm-1 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>Pendiente</span>'}</p>
+                        </div>
+                        <div class="hidden sm:flex flex-shrink-0 space-x-2">
+                           <button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-3 rounded-md text-xs shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>Editar</button>
+                           <button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-3 rounded-md text-xs shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>Eliminar</button>
+                        </div>
+                        <button data-action="${isPaid ? 'mark_pending' : 'mark_paid'}" class="w-full mt-4 sm:mt-0 sm:w-auto sm:ml-4 text-sm font-semibold py-2 px-4 rounded-lg shadow-md ${isPaid ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'} hidden md:block">${isPaid ? 'Marcar Pendiente' : 'Marcar Pagado'}</button>
+                    </div>`;
+                paymentsListEl.appendChild(paymentItem);
+            });
+        };
+
+        const renderAll = (preserveScroll = false) => {
+            if(preserveScroll) lastScrollY = window.scrollY;
+            updateMonthSelectorUI();
+            renderPayments(); 
+            checkReminders(); 
+            calculateAndDisplaySummary(); 
+            if(preserveScroll) requestAnimationFrame(() => { window.scrollTo(0, lastScrollY); });
+        };
+
+        const updateMonthSelectorUI = () => {
+            const currentMonthName = getMonthName(selectedMonthOffset);
+            displayedMonthLabelEl.textContent = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+            paymentsListTitleEl.textContent = `Pagos de ${currentMonthName}`;
+            summaryTotalLabelEl.textContent = currentMonthName;
+            summaryPendingLabelEl.textContent = currentMonthName;
+            prevMonthBtn.disabled = selectedMonthOffset <= MAX_PREV_MONTHS;
+            nextMonthBtn.disabled = selectedMonthOffset >= MAX_NEXT_MONTHS;
+        };
+        
+        // --- Notification Logic ---
+        const updateNotificationsButton = () => {
+            if (!('Notification' in window)) {
+                notificationsBtnText.textContent = 'Notificaciones no soportadas';
+                enableNotificationsBtn.disabled = true;
+                return;
+            }
+            switch (Notification.permission) {
+                case 'granted':
+                    notificationsBtnText.textContent = 'Notificaciones Activadas';
+                    enableNotificationsBtn.classList.add('text-green-600', 'dark:text-green-400');
+                    enableNotificationsBtn.disabled = true;
+                    break;
+                case 'denied':
+                    notificationsBtnText.textContent = 'Notificaciones Bloqueadas';
+                     enableNotificationsBtn.classList.add('text-red-600', 'dark:text-red-400');
+                    enableNotificationsBtn.disabled = true;
+                    break;
+                default:
+                    notificationsBtnText.textContent = 'Activar Notificaciones';
+                    enableNotificationsBtn.classList.remove('text-green-600', 'dark:text-green-400', 'text-red-600', 'dark:text-red-400');
+                    enableNotificationsBtn.disabled = false;
+            }
+        };
+
+        const handleNotificationsPermission = () => {
+            if (!('Notification' in window)) return;
+            Notification.requestPermission().then(permission => {
+                updateNotificationsButton();
+                if (permission === 'granted') {
+                    createPageNotification('¡Genial! Recibirás recordatorios de tus pagos.', 'success', 'Notificaciones Activadas');
+                    checkReminders(); // Re-check to send pending notifications immediately
+                } else {
+                     createPageNotification('No se han activado las notificaciones.', 'info', 'Aviso');
+                }
+            });
+        };
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            themeToggleBtn.addEventListener('click', toggleTheme);
+            prevMonthBtn.addEventListener('click', () => { selectedMonthOffset--; renderAll(); });
+            nextMonthBtn.addEventListener('click', () => { selectedMonthOffset++; renderAll(); });
+            toggleFormBtn.addEventListener('click', () => { const isVisible = addPaymentFormContainer.classList.toggle('visible'); toggleFormBtnText.textContent = isVisible ? 'Ocultar Formulario' : 'Agregar Nuevo Pago'; if (isVisible) paymentNameInput.focus(); else resetForm(); });
+            cancelAddBtn.addEventListener('click', () => { addPaymentFormContainer.classList.remove('visible'); toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; resetForm(); });
+            addPaymentForm.addEventListener('submit', handleAddOrUpdatePayment);
+            
+            // Listeners for desktop buttons
+            paymentsListEl.addEventListener('click', (e) => {
+                const target = e.target.closest('button'); if (!target) return;
+                const id = target.closest('.payment-item').dataset.id;
+                if (target.classList.contains('edit-btn')) editPayment(id);
+                else if (target.classList.contains('delete-btn')) showConfirmationModal('¿Seguro que quieres eliminar este pago?', () => deletePayment(id));
+                else if (target.dataset.action) togglePaymentStatus(id, target.dataset.action === 'mark_paid');
+            });
+            
+            // Listeners for long-press and swipe
+            const clearLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }};
+
+            paymentsListEl.addEventListener('touchstart', (e) => {
+                const item = e.target.closest('.payment-item');
+                if (!item) return;
+
+                swipeState.targetEl = item.querySelector('.payment-item-content');
+                swipeState.id = item.dataset.id;
+                swipeState.isPaid = item.dataset.isPaid === 'true';
+
+                if (e.target.closest('button')) {
+                    swipeState.targetEl = null;
+                    return;
+                }
+                
+                swipeState.startX = e.touches[0].clientX;
+                swipeState.currentX = swipeState.startX;
+                swipeState.isSwiping = false;
+
+                clearLongPress();
+                longPressTargetId = item.dataset.id;
+                longPressTimer = setTimeout(() => {
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    openLongPressModal(longPressTargetId);
+                    longPressTimer = null;
+                    if (swipeState.targetEl) {
+                        swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
+                        swipeState.targetEl.style.transform = '';
+                    }
+                    swipeState.targetEl = null;
+                }, LONG_PRESS_DURATION);
+            }, { passive: false });
+
+            paymentsListEl.addEventListener('touchmove', (e) => {
+                if (!swipeState.targetEl) return;
+                if (!longPressTimer && !swipeState.isSwiping) return;
+
+                swipeState.currentX = e.touches[0].clientX;
+                let diffX = swipeState.currentX - swipeState.startX;
+
+                if (!swipeState.isSwiping && Math.abs(diffX) > 10) {
+                    clearLongPress();
+                    swipeState.isSwiping = true;
+                }
+                
+                if (swipeState.isSwiping) {
+                    e.preventDefault();
+                    swipeState.targetEl.style.transition = 'none';
+                    swipeState.targetEl.style.transform = `translateX(${diffX}px)`;
+
+                    const parentItem = swipeState.targetEl.closest('.payment-item');
+                    const rightAction = parentItem.querySelector('.swipe-right');
+                    const leftAction = parentItem.querySelector('.swipe-left');
+
+                    const opacity = Math.min(Math.abs(diffX) / SWIPE_THRESHOLD, 1);
+                    if (diffX > 0) { 
+                        rightAction.style.opacity = opacity;
+                        leftAction.style.opacity = 0;
+                    } else {
+                        leftAction.style.opacity = opacity;
+                        rightAction.style.opacity = 0;
+                    }
+                }
+            }, { passive: false });
+
+            paymentsListEl.addEventListener('touchend', (e) => {
+                clearLongPress();
+                if (!swipeState.isSwiping || !swipeState.targetEl) return;
+                
+                const diffX = swipeState.currentX - swipeState.startX;
+                swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
+                
+                const parentItem = swipeState.targetEl.closest('.payment-item');
+                parentItem.querySelector('.swipe-right').style.opacity = '0';
+                parentItem.querySelector('.swipe-left').style.opacity = '0';
+
+                if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+                    togglePaymentStatus(swipeState.id, !swipeState.isPaid);
+                } else {
+                    swipeState.targetEl.style.transform = 'translateX(0px)';
+                }
+                
+                swipeState = { startX: 0, currentX: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
+            });
+
+            // Menu and other listeners
+            modalEditBtn.addEventListener('click', () => { if(longPressTargetId) editPayment(longPressTargetId); closeLongPressModal(); });
+            modalDeleteBtn.addEventListener('click', () => { if(longPressTargetId) showConfirmationModal('¿Seguro?', () => deletePayment(longPressTargetId)); closeLongPressModal(); });
+            modalCancelBtn.addEventListener('click', closeLongPressModal);
+            longPressModalEl.addEventListener('click', (e) => { if (e.target === longPressModalEl) closeLongPressModal(); });
+            hamburgerBtn.addEventListener('click', openMenu);
+            closeMenuBtn.addEventListener('click', closeMenu);
+            menuOverlay.addEventListener('click', closeMenu);
+            showHistoryBtn.addEventListener('click', (e) => { e.preventDefault(); renderHistory(); historyView.classList.remove('hidden'); mainContentEl.classList.add('hidden'); closeMenu(); });
+            closeHistoryBtn.addEventListener('click', () => { historyView.classList.add('hidden'); mainContentEl.classList.remove('hidden'); });
+            exportDataBtn.addEventListener('click', exportData);
+            importDataBtn.addEventListener('click', () => importFileEl.click());
+            importFileEl.addEventListener('change', importData);
+            exportCalendarBtn.addEventListener('click', () => { generateAndDownloadICS(); closeMenu(); });
+            enableNotificationsBtn.addEventListener('click', handleNotificationsPermission);
+
+             // --- Initial Load ---
+            loadPaymentsFromStorage();
+            applyTheme(localStorage.getItem('theme') || 'light');
+            updateNotificationsButton(); // Set initial state of the button
+            renderAll();
+        });
+
+    </script>
+</body>
+</html>

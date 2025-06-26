@@ -1,0 +1,22 @@
+    {
+      "name": "Gestor de Pagos Mensuales",
+      "short_name": "Gestor Pagos",
+      "start_url": ".",
+      "display": "standalone",
+      "background_color": "#f0f4f8",
+      "theme_color": "#667eea",
+      "description": "Una aplicación para gestionar tus pagos mensuales y recibir recordatorios.",
+      "icons": [
+        {
+          "src": "images/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "images/icon-512x512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+    }
+    
