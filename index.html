@@ -51,8 +51,8 @@
         .dark input::placeholder {
             color: #9ca3af;
         }
-          input[type="text"],
-          input[type="number"] {
+         input[type="text"],
+         input[type="number"] {
             color: #1f2937; 
         }
 
@@ -358,16 +358,18 @@
         const LONG_PRESS_DURATION = 700; // ms
         let lastScrollY = 0; 
 
-        // --- Swipe State ---
+        // --- MODIFIED: Swipe State. Now includes 'isPaid' to handle toggling. ---
         let swipeState = {
             startX: 0,
-            currentX: 0,
+            startY: 0,
             isSwiping: false,
+            scrolling: false, 
             targetEl: null,
             id: null,
             isPaid: false
         };
-        const SWIPE_THRESHOLD = 60; // pixels
+        const SWIPE_THRESHOLD = 60; // Pixels to drag to trigger action
+        const SWIPE_INIT_THRESHOLD = 12; // Pixels to drag before deciding if it's a swipe or scroll
 
         // DOM Elements
         const htmlEl = document.documentElement;
@@ -463,7 +465,7 @@
         const getMonthName = (offsetOrDate) => {
             const date = (offsetOrDate instanceof Date) ? new Date(offsetOrDate) : new Date();
              if (typeof offsetOrDate === 'number') {
-                 date.setMonth(date.getMonth() + offsetOrDate);
+                  date.setMonth(date.getMonth() + offsetOrDate);
             }
             return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         }
@@ -728,7 +730,7 @@
                 const isPaid = payment.paidMonths && payment.paidMonths[displayMonthKey];
                 const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
                 const paymentItem = document.createElement('div');
-                paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`; // Removed padding from here
+                paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`;
                 paymentItem.dataset.id = payment.id;
                 paymentItem.dataset.isPaid = isPaid ? 'true' : 'false';
 
@@ -830,52 +832,62 @@
                 else if (target.dataset.action) togglePaymentStatus(id, target.dataset.action === 'mark_paid');
             });
             
-            // Listeners for long-press and swipe
+            // --- Listeners for long-press and improved swipe ---
             const clearLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }};
 
             paymentsListEl.addEventListener('touchstart', (e) => {
                 const item = e.target.closest('.payment-item');
-                if (!item) return;
-
-                swipeState.targetEl = item.querySelector('.payment-item-content');
-                swipeState.id = item.dataset.id;
-                swipeState.isPaid = item.dataset.isPaid === 'true';
-
-                if (e.target.closest('button')) {
-                    swipeState.targetEl = null;
+                // Ignore if touch is on a button or not on an item
+                if (!item || e.target.closest('button')) {
+                    swipeState.targetEl = null; // Ensure no swipe can start
                     return;
                 }
-                
-                swipeState.startX = e.touches[0].clientX;
-                swipeState.currentX = swipeState.startX;
-                swipeState.isSwiping = false;
 
+                // Reset state for new touch
+                swipeState.targetEl = item.querySelector('.payment-item-content');
+                swipeState.id = item.dataset.id;
+                swipeState.isPaid = item.dataset.isPaid === 'true'; // MODIFIED: Capture current state
+                swipeState.startX = e.touches[0].clientX;
+                swipeState.startY = e.touches[0].clientY;
+                swipeState.isSwiping = false;
+                swipeState.scrolling = false;
+                
+                // Set up long press
                 clearLongPress();
                 longPressTargetId = item.dataset.id;
                 longPressTimer = setTimeout(() => {
                     if (navigator.vibrate) navigator.vibrate(50);
                     openLongPressModal(longPressTargetId);
                     longPressTimer = null;
-                    if (swipeState.targetEl) {
-                        swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
-                        swipeState.targetEl.style.transform = '';
-                    }
-                    swipeState.targetEl = null;
+                    swipeState.targetEl = null; // Prevent swipe after long press
                 }, LONG_PRESS_DURATION);
-            }, { passive: false });
+            }, { passive: true });
 
             paymentsListEl.addEventListener('touchmove', (e) => {
-                if (!swipeState.targetEl) return;
-                if (!longPressTimer && !swipeState.isSwiping) return;
+                // Exit if no target, or if we already decided it's a vertical scroll
+                if (!swipeState.targetEl || swipeState.scrolling) return;
 
-                swipeState.currentX = e.touches[0].clientX;
-                let diffX = swipeState.currentX - swipeState.startX;
+                const diffX = e.touches[0].clientX - swipeState.startX;
+                const diffY = e.touches[0].clientY - swipeState.startY;
 
-                if (!swipeState.isSwiping && Math.abs(diffX) > 10) {
-                    clearLongPress();
-                    swipeState.isSwiping = true;
+                // If this is the first significant move, decide if it's a swipe or scroll
+                if (!swipeState.isSwiping) {
+                    if (Math.abs(diffX) > SWIPE_INIT_THRESHOLD || Math.abs(diffY) > SWIPE_INIT_THRESHOLD) {
+                        clearLongPress(); // A decision is made, cancel long press
+                        // If horizontal movement is greater than vertical, it's a swipe
+                        if (Math.abs(diffX) > Math.abs(diffY)) {
+                            swipeState.isSwiping = true;
+                        } else {
+                            // It's a scroll, so lock the gesture and do nothing more
+                            swipeState.scrolling = true;
+                            return;
+                        }
+                    } else {
+                         return; // Not moved enough yet
+                    }
                 }
-                
+
+                // If we are swiping, prevent default scroll and animate the item
                 if (swipeState.isSwiping) {
                     e.preventDefault();
                     swipeState.targetEl.style.transition = 'none';
@@ -884,12 +896,12 @@
                     const parentItem = swipeState.targetEl.closest('.payment-item');
                     const rightAction = parentItem.querySelector('.swipe-right');
                     const leftAction = parentItem.querySelector('.swipe-left');
-
                     const opacity = Math.min(Math.abs(diffX) / SWIPE_THRESHOLD, 1);
-                    if (diffX > 0) { 
+
+                    if (diffX > 0) { // Swiping right
                         rightAction.style.opacity = opacity;
                         leftAction.style.opacity = 0;
-                    } else {
+                    } else { // Swiping left
                         leftAction.style.opacity = opacity;
                         rightAction.style.opacity = 0;
                     }
@@ -898,22 +910,31 @@
 
             paymentsListEl.addEventListener('touchend', (e) => {
                 clearLongPress();
-                if (!swipeState.isSwiping || !swipeState.targetEl) return;
                 
-                const diffX = swipeState.currentX - swipeState.startX;
+                // Only process if we were actually swiping
+                if (!swipeState.isSwiping || !swipeState.targetEl) {
+                    swipeState.targetEl = null; // Ensure clean state
+                    return;
+                }
+                
+                const diffX = e.changedTouches[0].clientX - swipeState.startX;
                 swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
                 
+                // Hide action backgrounds
                 const parentItem = swipeState.targetEl.closest('.payment-item');
                 parentItem.querySelector('.swipe-right').style.opacity = '0';
                 parentItem.querySelector('.swipe-left').style.opacity = '0';
 
                 if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+                    // MODIFIED: Swipe was successful, toggle the current state regardless of direction.
                     togglePaymentStatus(swipeState.id, !swipeState.isPaid);
                 } else {
+                    // Swipe was not far enough, snap back to origin
                     swipeState.targetEl.style.transform = 'translateX(0px)';
                 }
                 
-                swipeState = { startX: 0, currentX: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
+                // MODIFIED: Reset the entire state object for the next interaction.
+                swipeState = { startX: 0, startY: 0, isSwiping: false, scrolling: false, targetEl: null, id: null, isPaid: false };
             });
 
             // Menu and other listeners
