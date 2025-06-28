@@ -51,8 +51,8 @@
         .dark input::placeholder {
             color: #9ca3af;
         }
-         input[type="text"],
-         input[type="number"] {
+          input[type="text"],
+          input[type="number"] {
             color: #1f2937; 
         }
 
@@ -346,6 +346,18 @@
             </div>
         </div>
     </div>
+    
+    <!-- NEW: Generic Confirmation Modal -->
+    <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[1060]">
+        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-11/12 max-w-sm">
+            <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Confirmación</h3>
+            <p id="confirmationModalMessage" class="text-slate-600 dark:text-slate-300 mb-6"></p>
+            <div class="flex justify-end space-x-4">
+                <button id="confirmationModalCancelBtn" class="px-4 py-2 rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 font-medium transition-colors">Cancelar</button>
+                <button id="confirmationModalConfirmBtn" class="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 font-medium transition-colors">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Application State
@@ -357,19 +369,18 @@
         let longPressTargetId = null;
         const LONG_PRESS_DURATION = 700; // ms
         let lastScrollY = 0; 
+        let _confirmationCallback = null; // NEW: To hold the callback for the custom confirm modal
 
-        // --- MODIFIED: Swipe State. Now includes 'isPaid' to handle toggling. ---
+        // --- Swipe State ---
         let swipeState = {
             startX: 0,
-            startY: 0,
+            currentX: 0,
             isSwiping: false,
-            scrolling: false, 
             targetEl: null,
             id: null,
             isPaid: false
         };
-        const SWIPE_THRESHOLD = 60; // Pixels to drag to trigger action
-        const SWIPE_INIT_THRESHOLD = 12; // Pixels to drag before deciding if it's a swipe or scroll
+        const SWIPE_THRESHOLD = 60; // pixels
 
         // DOM Elements
         const htmlEl = document.documentElement;
@@ -402,6 +413,12 @@
         const modalEditBtn = document.getElementById('modalEditBtn');
         const modalDeleteBtn = document.getElementById('modalDeleteBtn');
         const modalCancelBtn = document.getElementById('modalCancelBtn');
+
+        // NEW: Confirmation Modal elements
+        const confirmationModalEl = document.getElementById('confirmationModal');
+        const confirmationModalMessageEl = document.getElementById('confirmationModalMessage');
+        const confirmationModalCancelBtn = document.getElementById('confirmationModalCancelBtn');
+        const confirmationModalConfirmBtn = document.getElementById('confirmationModalConfirmBtn');
 
         // Menu & Import/Export DOM Elements
         const hamburgerBtn = document.getElementById('hamburgerBtn');
@@ -465,7 +482,7 @@
         const getMonthName = (offsetOrDate) => {
             const date = (offsetOrDate instanceof Date) ? new Date(offsetOrDate) : new Date();
              if (typeof offsetOrDate === 'number') {
-                  date.setMonth(date.getMonth() + offsetOrDate);
+                 date.setMonth(date.getMonth() + offsetOrDate);
             }
             return date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         }
@@ -631,7 +648,18 @@
 
         const openLongPressModal = (paymentId) => { const payment = payments.find(p => p.id === paymentId); if (payment) { modalItemNameEl.textContent = payment.name; longPressModalEl.classList.add('visible'); } };
         const closeLongPressModal = () => { longPressModalEl.classList.remove('visible'); longPressTargetId = null; };
-        const showConfirmationModal = (message, onConfirm) => { if (confirm(message)) { onConfirm(); } };
+        
+        // REPLACED: The old `confirm()` function is replaced by this new system
+        const showConfirmationModal = (message, onConfirm) => {
+            confirmationModalMessageEl.innerHTML = message;
+            _confirmationCallback = onConfirm;
+            confirmationModalEl.classList.remove('hidden');
+        };
+
+        const hideConfirmationModal = () => {
+            confirmationModalEl.classList.add('hidden');
+            _confirmationCallback = null;
+        };
 
         const handleAddOrUpdatePayment = (e) => {
             e.preventDefault();
@@ -707,7 +735,7 @@
             reader.onload = (e) => {
                 try {
                     const importedPayments = JSON.parse(e.target.result); if (!Array.isArray(importedPayments)) throw new Error("Formato inválido.");
-                    showConfirmationModal("Esto reemplazará todos los datos actuales. ¿Continuar?", () => { payments = importedPayments; savePaymentsToStorage(); renderAll(); createPageNotification("Datos importados.", "success"); });
+                    showConfirmationModal("Esto reemplazará todos los datos actuales. ¿Deseas continuar?", () => { payments = importedPayments; savePaymentsToStorage(); renderAll(); createPageNotification("Datos importados.", "success"); });
                 } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
             };
             reader.readAsText(file);
@@ -730,7 +758,7 @@
                 const isPaid = payment.paidMonths && payment.paidMonths[displayMonthKey];
                 const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
                 const paymentItem = document.createElement('div');
-                paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`;
+                paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`; // Removed padding from here
                 paymentItem.dataset.id = payment.id;
                 paymentItem.dataset.isPaid = isPaid ? 'true' : 'false';
 
@@ -832,62 +860,52 @@
                 else if (target.dataset.action) togglePaymentStatus(id, target.dataset.action === 'mark_paid');
             });
             
-            // --- Listeners for long-press and improved swipe ---
+            // Listeners for long-press and swipe
             const clearLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }};
 
             paymentsListEl.addEventListener('touchstart', (e) => {
                 const item = e.target.closest('.payment-item');
-                // Ignore if touch is on a button or not on an item
-                if (!item || e.target.closest('button')) {
-                    swipeState.targetEl = null; // Ensure no swipe can start
-                    return;
-                }
+                if (!item) return;
 
-                // Reset state for new touch
                 swipeState.targetEl = item.querySelector('.payment-item-content');
                 swipeState.id = item.dataset.id;
-                swipeState.isPaid = item.dataset.isPaid === 'true'; // MODIFIED: Capture current state
-                swipeState.startX = e.touches[0].clientX;
-                swipeState.startY = e.touches[0].clientY;
-                swipeState.isSwiping = false;
-                swipeState.scrolling = false;
+                swipeState.isPaid = item.dataset.isPaid === 'true';
+
+                if (e.target.closest('button')) {
+                    swipeState.targetEl = null;
+                    return;
+                }
                 
-                // Set up long press
+                swipeState.startX = e.touches[0].clientX;
+                swipeState.currentX = swipeState.startX;
+                swipeState.isSwiping = false;
+
                 clearLongPress();
                 longPressTargetId = item.dataset.id;
                 longPressTimer = setTimeout(() => {
                     if (navigator.vibrate) navigator.vibrate(50);
                     openLongPressModal(longPressTargetId);
                     longPressTimer = null;
-                    swipeState.targetEl = null; // Prevent swipe after long press
+                    if (swipeState.targetEl) {
+                        swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
+                        swipeState.targetEl.style.transform = '';
+                    }
+                    swipeState.targetEl = null;
                 }, LONG_PRESS_DURATION);
-            }, { passive: true });
+            }, { passive: false });
 
             paymentsListEl.addEventListener('touchmove', (e) => {
-                // Exit if no target, or if we already decided it's a vertical scroll
-                if (!swipeState.targetEl || swipeState.scrolling) return;
+                if (!swipeState.targetEl) return;
+                if (!longPressTimer && !swipeState.isSwiping) return;
 
-                const diffX = e.touches[0].clientX - swipeState.startX;
-                const diffY = e.touches[0].clientY - swipeState.startY;
+                swipeState.currentX = e.touches[0].clientX;
+                let diffX = swipeState.currentX - swipeState.startX;
 
-                // If this is the first significant move, decide if it's a swipe or scroll
-                if (!swipeState.isSwiping) {
-                    if (Math.abs(diffX) > SWIPE_INIT_THRESHOLD || Math.abs(diffY) > SWIPE_INIT_THRESHOLD) {
-                        clearLongPress(); // A decision is made, cancel long press
-                        // If horizontal movement is greater than vertical, it's a swipe
-                        if (Math.abs(diffX) > Math.abs(diffY)) {
-                            swipeState.isSwiping = true;
-                        } else {
-                            // It's a scroll, so lock the gesture and do nothing more
-                            swipeState.scrolling = true;
-                            return;
-                        }
-                    } else {
-                         return; // Not moved enough yet
-                    }
+                if (!swipeState.isSwiping && Math.abs(diffX) > 10) {
+                    clearLongPress();
+                    swipeState.isSwiping = true;
                 }
-
-                // If we are swiping, prevent default scroll and animate the item
+                
                 if (swipeState.isSwiping) {
                     e.preventDefault();
                     swipeState.targetEl.style.transition = 'none';
@@ -896,12 +914,12 @@
                     const parentItem = swipeState.targetEl.closest('.payment-item');
                     const rightAction = parentItem.querySelector('.swipe-right');
                     const leftAction = parentItem.querySelector('.swipe-left');
-                    const opacity = Math.min(Math.abs(diffX) / SWIPE_THRESHOLD, 1);
 
-                    if (diffX > 0) { // Swiping right
+                    const opacity = Math.min(Math.abs(diffX) / SWIPE_THRESHOLD, 1);
+                    if (diffX > 0) { 
                         rightAction.style.opacity = opacity;
                         leftAction.style.opacity = 0;
-                    } else { // Swiping left
+                    } else {
                         leftAction.style.opacity = opacity;
                         rightAction.style.opacity = 0;
                     }
@@ -910,38 +928,39 @@
 
             paymentsListEl.addEventListener('touchend', (e) => {
                 clearLongPress();
+                if (!swipeState.isSwiping || !swipeState.targetEl) return;
                 
-                // Only process if we were actually swiping
-                if (!swipeState.isSwiping || !swipeState.targetEl) {
-                    swipeState.targetEl = null; // Ensure clean state
-                    return;
-                }
-                
-                const diffX = e.changedTouches[0].clientX - swipeState.startX;
+                const diffX = swipeState.currentX - swipeState.startX;
                 swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
                 
-                // Hide action backgrounds
                 const parentItem = swipeState.targetEl.closest('.payment-item');
                 parentItem.querySelector('.swipe-right').style.opacity = '0';
                 parentItem.querySelector('.swipe-left').style.opacity = '0';
 
                 if (Math.abs(diffX) > SWIPE_THRESHOLD) {
-                    // MODIFIED: Swipe was successful, toggle the current state regardless of direction.
                     togglePaymentStatus(swipeState.id, !swipeState.isPaid);
                 } else {
-                    // Swipe was not far enough, snap back to origin
                     swipeState.targetEl.style.transform = 'translateX(0px)';
                 }
                 
-                // MODIFIED: Reset the entire state object for the next interaction.
-                swipeState = { startX: 0, startY: 0, isSwiping: false, scrolling: false, targetEl: null, id: null, isPaid: false };
+                swipeState = { startX: 0, currentX: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
             });
 
             // Menu and other listeners
             modalEditBtn.addEventListener('click', () => { if(longPressTargetId) editPayment(longPressTargetId); closeLongPressModal(); });
-            modalDeleteBtn.addEventListener('click', () => { if(longPressTargetId) showConfirmationModal('¿Seguro?', () => deletePayment(longPressTargetId)); closeLongPressModal(); });
+            modalDeleteBtn.addEventListener('click', () => { if(longPressTargetId) showConfirmationModal('¿Seguro que quieres eliminar este pago de forma permanente?', () => deletePayment(longPressTargetId)); closeLongPressModal(); });
             modalCancelBtn.addEventListener('click', closeLongPressModal);
             longPressModalEl.addEventListener('click', (e) => { if (e.target === longPressModalEl) closeLongPressModal(); });
+            
+            // NEW: Listeners for the generic confirmation modal
+            confirmationModalConfirmBtn.addEventListener('click', () => {
+                if (typeof _confirmationCallback === 'function') {
+                    _confirmationCallback();
+                }
+                hideConfirmationModal();
+            });
+            confirmationModalCancelBtn.addEventListener('click', hideConfirmationModal);
+
             hamburgerBtn.addEventListener('click', openMenu);
             closeMenuBtn.addEventListener('click', closeMenu);
             menuOverlay.addEventListener('click', closeMenu);
