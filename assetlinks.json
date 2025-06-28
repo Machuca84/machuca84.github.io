@@ -1,9 +1,0 @@
-[{
-  "relation": ["delegate_permission/common.handle_all_urls"],
-  "target": {
-    "namespace": "android_app",
-    "package_name": "app.machuca84.gestordepagos",
-    "sha256_cert_fingerprints":
-    ["85:61:8A:E5:77:3C:FC:2E:02:A1:C7:27:F0:CF:4E:F3:69:E1:8A:3E:14:99:15:07:8F:F1:53:CB:93:FE:D1:8A"]
-  }
-}]
