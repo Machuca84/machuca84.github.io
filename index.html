@@ -369,18 +369,21 @@
         let longPressTargetId = null;
         const LONG_PRESS_DURATION = 700; // ms
         let lastScrollY = 0; 
-        let _confirmationCallback = null; // NEW: To hold the callback for the custom confirm modal
+        let _confirmationCallback = null; // To hold the callback for the custom confirm modal
 
         // --- Swipe State ---
         let swipeState = {
             startX: 0,
+            startY: 0, // MODIFIED: Add Y tracking
             currentX: 0,
+            currentY: 0, // MODIFIED: Add Y tracking
             isSwiping: false,
             targetEl: null,
             id: null,
             isPaid: false
         };
         const SWIPE_THRESHOLD = 60; // pixels
+        const MOVE_THRESHOLD = 10; // pixels to cancel long press
 
         // DOM Elements
         const htmlEl = document.documentElement;
@@ -649,7 +652,7 @@
         const openLongPressModal = (paymentId) => { const payment = payments.find(p => p.id === paymentId); if (payment) { modalItemNameEl.textContent = payment.name; longPressModalEl.classList.add('visible'); } };
         const closeLongPressModal = () => { longPressModalEl.classList.remove('visible'); longPressTargetId = null; };
         
-        // REPLACED: The old `confirm()` function is replaced by this new system
+        // MODIFIED: Replaced the old `confirm()` wrapper with a real modal system
         const showConfirmationModal = (message, onConfirm) => {
             confirmationModalMessageEl.innerHTML = message;
             _confirmationCallback = onConfirm;
@@ -856,7 +859,7 @@
                 const target = e.target.closest('button'); if (!target) return;
                 const id = target.closest('.payment-item').dataset.id;
                 if (target.classList.contains('edit-btn')) editPayment(id);
-                else if (target.classList.contains('delete-btn')) showConfirmationModal('¿Seguro que quieres eliminar este pago?', () => deletePayment(id));
+                else if (target.classList.contains('delete-btn')) showConfirmationModal('¿Seguro que quieres eliminar este pago de forma permanente?', () => deletePayment(id));
                 else if (target.dataset.action) togglePaymentStatus(id, target.dataset.action === 'mark_paid');
             });
             
@@ -878,6 +881,8 @@
                 
                 swipeState.startX = e.touches[0].clientX;
                 swipeState.currentX = swipeState.startX;
+                swipeState.startY = e.touches[0].clientY; // MODIFIED: Store initial Y
+                swipeState.currentY = swipeState.startY; // MODIFIED: Store initial Y
                 swipeState.isSwiping = false;
 
                 clearLongPress();
@@ -899,15 +904,30 @@
                 if (!longPressTimer && !swipeState.isSwiping) return;
 
                 swipeState.currentX = e.touches[0].clientX;
+                swipeState.currentY = e.touches[0].clientY; // MODIFIED: Update Y
+                
                 let diffX = swipeState.currentX - swipeState.startX;
+                let diffY = swipeState.currentY - swipeState.startY; // MODIFIED: Calculate Y difference
 
-                if (!swipeState.isSwiping && Math.abs(diffX) > 10) {
+                // MODIFIED: If there is any significant movement, cancel the long press.
+                // This is the core of the fix for gesture conflicts.
+                if (longPressTimer && (Math.abs(diffX) > MOVE_THRESHOLD || Math.abs(diffY) > MOVE_THRESHOLD)) {
                     clearLongPress();
-                    swipeState.isSwiping = true;
+                }
+
+                // If the long press timer is gone, we can check if we should start a swipe.
+                if (!longPressTimer && !swipeState.isSwiping) {
+                    // Only start a horizontal swipe if the movement is mostly horizontal.
+                    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > MOVE_THRESHOLD) {
+                        swipeState.isSwiping = true;
+                    } else {
+                        // This is a vertical scroll or other gesture, so don't initiate a swipe.
+                        return;
+                    }
                 }
                 
                 if (swipeState.isSwiping) {
-                    e.preventDefault();
+                    e.preventDefault(); // Prevent vertical scroll only when swiping horizontally
                     swipeState.targetEl.style.transition = 'none';
                     swipeState.targetEl.style.transform = `translateX(${diffX}px)`;
 
@@ -943,7 +963,8 @@
                     swipeState.targetEl.style.transform = 'translateX(0px)';
                 }
                 
-                swipeState = { startX: 0, currentX: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
+                // Reset state
+                swipeState = { startX: 0, startY: 0, currentX: 0, currentY: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
             });
 
             // Menu and other listeners
