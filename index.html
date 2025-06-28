@@ -15,6 +15,11 @@
             background-color: #f0f4f8; 
             color: #1f2937; 
             overscroll-behavior-x: none; 
+            /* MODIFIED: Prevents accidental text selection for a more native feel */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none;    /* Firefox */
+            -ms-user-select: none;     /* IE10+/Edge */
+            user-select: none;         /* Standard */
         }
         .dark body {
             background-color: #1f2937; 
@@ -374,9 +379,9 @@
         // --- Swipe State ---
         let swipeState = {
             startX: 0,
-            startY: 0, // MODIFIED: Add Y tracking
+            startY: 0, 
             currentX: 0,
-            currentY: 0, // MODIFIED: Add Y tracking
+            currentY: 0, 
             isSwiping: false,
             targetEl: null,
             id: null,
@@ -652,7 +657,6 @@
         const openLongPressModal = (paymentId) => { const payment = payments.find(p => p.id === paymentId); if (payment) { modalItemNameEl.textContent = payment.name; longPressModalEl.classList.add('visible'); } };
         const closeLongPressModal = () => { longPressModalEl.classList.remove('visible'); longPressTargetId = null; };
         
-        // MODIFIED: Replaced the old `confirm()` wrapper with a real modal system
         const showConfirmationModal = (message, onConfirm) => {
             confirmationModalMessageEl.innerHTML = message;
             _confirmationCallback = onConfirm;
@@ -881,8 +885,8 @@
                 
                 swipeState.startX = e.touches[0].clientX;
                 swipeState.currentX = swipeState.startX;
-                swipeState.startY = e.touches[0].clientY; // MODIFIED: Store initial Y
-                swipeState.currentY = swipeState.startY; // MODIFIED: Store initial Y
+                swipeState.startY = e.touches[0].clientY; 
+                swipeState.currentY = swipeState.startY; 
                 swipeState.isSwiping = false;
 
                 clearLongPress();
@@ -904,30 +908,25 @@
                 if (!longPressTimer && !swipeState.isSwiping) return;
 
                 swipeState.currentX = e.touches[0].clientX;
-                swipeState.currentY = e.touches[0].clientY; // MODIFIED: Update Y
+                swipeState.currentY = e.touches[0].clientY; 
                 
                 let diffX = swipeState.currentX - swipeState.startX;
-                let diffY = swipeState.currentY - swipeState.startY; // MODIFIED: Calculate Y difference
+                let diffY = swipeState.currentY - swipeState.startY;
 
-                // MODIFIED: If there is any significant movement, cancel the long press.
-                // This is the core of the fix for gesture conflicts.
                 if (longPressTimer && (Math.abs(diffX) > MOVE_THRESHOLD || Math.abs(diffY) > MOVE_THRESHOLD)) {
                     clearLongPress();
                 }
 
-                // If the long press timer is gone, we can check if we should start a swipe.
                 if (!longPressTimer && !swipeState.isSwiping) {
-                    // Only start a horizontal swipe if the movement is mostly horizontal.
                     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > MOVE_THRESHOLD) {
                         swipeState.isSwiping = true;
                     } else {
-                        // This is a vertical scroll or other gesture, so don't initiate a swipe.
                         return;
                     }
                 }
                 
                 if (swipeState.isSwiping) {
-                    e.preventDefault(); // Prevent vertical scroll only when swiping horizontally
+                    e.preventDefault(); 
                     swipeState.targetEl.style.transition = 'none';
                     swipeState.targetEl.style.transform = `translateX(${diffX}px)`;
 
@@ -948,7 +947,11 @@
 
             paymentsListEl.addEventListener('touchend', (e) => {
                 clearLongPress();
-                if (!swipeState.isSwiping || !swipeState.targetEl) return;
+                if (!swipeState.isSwiping || !swipeState.targetEl) {
+                    // Reset state if not swiping to avoid lingering states
+                    swipeState = { startX: 0, startY: 0, currentX: 0, currentY: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
+                    return;
+                }
                 
                 const diffX = swipeState.currentX - swipeState.startX;
                 swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
@@ -964,6 +967,23 @@
                 }
                 
                 // Reset state
+                swipeState = { startX: 0, startY: 0, currentX: 0, currentY: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
+            });
+
+            // MODIFIED: Added touchcancel listener to handle system-level gesture interruptions.
+            paymentsListEl.addEventListener('touchcancel', (e) => {
+                clearLongPress();
+                if (swipeState.targetEl) {
+                    // Also reset the visual state of the swiped item if any
+                    swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
+                    swipeState.targetEl.style.transform = 'translateX(0px)';
+                    const parentItem = swipeState.targetEl.closest('.payment-item');
+                    if(parentItem) {
+                        parentItem.querySelector('.swipe-right').style.opacity = '0';
+                        parentItem.querySelector('.swipe-left').style.opacity = '0';
+                    }
+                }
+                // Fully reset state
                 swipeState = { startX: 0, startY: 0, currentX: 0, currentY: 0, isSwiping: false, targetEl: null, id: null, isPaid: false };
             });
 
