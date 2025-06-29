@@ -12,7 +12,19 @@ function openDB() {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onerror = () => reject("Error opening DB in SW");
         request.onsuccess = (event) => resolve(event.target.result);
-        // onupgradeneeded is handled by the main app, so it should exist
+        // MODIFIED: This now includes the 'settings' object store to match the main app.
+        request.onupgradeneeded = (event) => {
+             const db = event.target.result;
+             if (!db.objectStoreNames.contains('payments')) {
+                 db.createObjectStore('payments', { keyPath: 'id' });
+             }
+             if (!db.objectStoreNames.contains('futureInstallments')) {
+                  db.createObjectStore('futureInstallments', { keyPath: 'id' });
+             }
+             if (!db.objectStoreNames.contains('settings')) {
+                  db.createObjectStore('settings', { keyPath: 'key' });
+             }
+        };
     });
 }
 
