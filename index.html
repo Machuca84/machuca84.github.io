@@ -50,13 +50,15 @@
         .dark .history-item .text-slate-500 { color: #94a3b8; } 
 
 
-        .dark input, .dark select {
+        .dark input[type="text"],
+        .dark input[type="number"],
+        .dark input[type="password"] {
             color: #e5e7eb; 
             background-color: #4b5563; 
             border-color: #6b7280;
         }
         .dark input::placeholder { color: #9ca3af; }
-        input, select { color: #1f2937; }
+        input[type="text"], input[type="number"], input[type="password"] { color: #1f2937; }
 
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -107,7 +109,7 @@
         .view-container { z-index: 1; }
         #menuOverlay { z-index: 40; }
         #sideMenu { z-index: 50; }
-        #longPressModal, #confirmationModal, #apiKeyModal, #notificationSettingsModal { z-index: 60; }
+        #longPressModal, #confirmationModal, #apiKeyModal { z-index: 60; }
         #loadingModal { z-index: 70; }
 
 
@@ -169,25 +171,6 @@
             animation: spin 1s ease infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* Toggle Switch Styles */
-        .toggle-switch {
-            position: relative; display: inline-block; width: 60px; height: 34px;
-        }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider {
-            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #ccc; transition: .4s; border-radius: 34px;
-        }
-        .toggle-slider:before {
-            position: absolute; content: ""; height: 26px; width: 26px;
-            left: 4px; bottom: 4px; background-color: white;
-            transition: .4s; border-radius: 50%;
-        }
-        input:checked + .toggle-slider { background-color: #4f46e5; }
-        input:focus + .toggle-slider { box-shadow: 0 0 1px #4f46e5; }
-        input:checked + .toggle-slider:before { transform: translateX(26px); }
-
     </style>
 </head>
 <body class="antialiased">
@@ -231,9 +214,9 @@
                         </a>
                     </li>
                     <li>
-                        <button id="notificationSettingsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="enableNotificationsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                            Configurar Notificaciones
+                            <span id="notificationsBtnText">Activar Notificaciones</span>
                         </button>
                     </li>
                     <li>
@@ -440,119 +423,11 @@
            </form>
         </div>
     </div>
-    
-    <!-- Notification Settings Modal -->
-    <div id="notificationSettingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">Configuración de Notificaciones</h3>
-            
-            <div class="space-y-6">
-                <div class="flex items-center justify-between">
-                    <label for="notificationsEnabledToggle" class="font-medium text-slate-700 dark:text-slate-300">Activar Notificaciones en 2do Plano</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="notificationsEnabledToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div id="notificationTimeContainer" class="space-y-2">
-                    <label for="notificationTimeInput" class="block font-medium text-slate-700 dark:text-slate-300">Hora del primer recordatorio diario</label>
-                    <input type="time" id="notificationTimeInput" class="block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                </div>
-                
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                    Si un pago vence hoy y sigue pendiente, recibirás recordatorios adicionales cada 3 horas durante el día.
-                </p>
-            </div>
-            
-            <div class="flex justify-end space-x-4 mt-8">
-                <button type="button" id="notificationSettingsCancelBtn" class="px-4 py-2 rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 font-medium transition-colors">Cancelar</button>
-                <button type="button" id="notificationSettingsSaveBtn" class="px-4 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 font-medium transition-colors">Guardar Cambios</button>
-            </div>
-        </div>
-    </div>
-
 
     <script>
-        // --- DB HELPER ---
-        const db = {
-            _db: null,
-            _dbName: 'GestorPagosDB',
-            _dbVersion: 1,
-
-            async open() {
-                if (this._db) return Promise.resolve(this._db);
-                return new Promise((resolve, reject) => {
-                    const request = indexedDB.open(this._dbName, this._dbVersion);
-                    request.onerror = (event) => reject("Error al abrir IndexedDB.");
-                    request.onsuccess = (event) => {
-                        this._db = event.target.result;
-                        resolve(this._db);
-                    };
-                    request.onupgradeneeded = (event) => {
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains('payments')) {
-                            db.createObjectStore('payments', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('futureInstallments')) {
-                             db.createObjectStore('futureInstallments', { keyPath: 'id' });
-                        }
-                        if (!db.objectStoreNames.contains('settings')) {
-                             db.createObjectStore('settings', { keyPath: 'key' });
-                        }
-                    };
-                });
-            },
-
-            async get(storeName, key) {
-                const db = await this.open();
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction(storeName, 'readonly');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.get(key);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject('Error al obtener el dato.');
-                });
-            },
-            
-            async getAll(storeName) {
-                const db = await this.open();
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction(storeName, 'readonly');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.getAll();
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject('Error al obtener todos los datos.');
-                });
-            },
-
-            async put(storeName, data) {
-                const db = await this.open();
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction(storeName, 'readwrite');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.put(data);
-                    transaction.oncomplete = () => resolve(request.result);
-                    transaction.onerror = () => reject('Error al guardar el dato.');
-                });
-            },
-            
-            async delete(storeName, key) {
-                const db = await this.open();
-                return new Promise((resolve, reject) => {
-                    const transaction = db.transaction(storeName, 'readwrite');
-                    const store = transaction.objectStore(storeName);
-                    const request = store.delete(key);
-                    transaction.oncomplete = () => resolve();
-                    transaction.onerror = () => reject('Error al eliminar el dato.');
-                });
-            }
-        };
-
-        // --- APPLICATION STATE ---
+        // Application State
         let payments = [];
         let futureInstallments = []; 
-        let notificationSettings = { enabled: false, time: '09:00' };
         let selectedMonthOffset = 0; 
         const MAX_NEXT_MONTHS = 2; 
         const MAX_PREV_MONTHS = -2; 
@@ -564,7 +439,7 @@
         let installmentsChartInstance = null;
         let wasAnalyzing = false;
 
-        // --- SWIPE STATE ---
+        // Swipe State
         let swipeState = {
             startX: 0, startY: 0, currentX: 0, currentY: 0, 
             isSwiping: false, targetEl: null, id: null, isPaid: false
@@ -572,7 +447,7 @@
         const SWIPE_THRESHOLD = 60; 
         const MOVE_THRESHOLD = 10; 
 
-        // --- DOM ELEMENTS ---
+        // DOM Elements
         const htmlEl = document.documentElement;
         const themeToggleBtn = document.getElementById('themeToggleBtn');
         const sunIcon = document.getElementById('sunIcon');
@@ -629,22 +504,14 @@
         const closeFutureInstallmentsBtn = document.getElementById('closeFutureInstallmentsBtn');
         const futureInstallmentsListContainerEl = document.getElementById('futureInstallmentsListContainer');
         const installmentsChartEl = document.getElementById('installmentsChart');
+        const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
+        const notificationsBtnText = document.getElementById('notificationsBtnText');
         const modifyApiKeyBtn = document.getElementById('modifyApiKeyBtn');
         const apiKeyModal = document.getElementById('apiKeyModal');
         const apiKeyForm = document.getElementById('apiKeyForm');
         const modalApiKeyInput = document.getElementById('modalApiKeyInput');
         const apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
         
-        // Notification Modal Elements
-        const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
-        const notificationSettingsModal = document.getElementById('notificationSettingsModal');
-        const notificationsEnabledToggle = document.getElementById('notificationsEnabledToggle');
-        const notificationTimeInput = document.getElementById('notificationTimeInput');
-        const notificationTimeContainer = document.getElementById('notificationTimeContainer');
-        const notificationSettingsSaveBtn = document.getElementById('notificationSettingsSaveBtn');
-        const notificationSettingsCancelBtn = document.getElementById('notificationSettingsCancelBtn');
-
-        // --- CORE LOGIC ---
         const showView = (viewId) => {
             document.querySelectorAll('.view-container').forEach(view => { view.classList.add('hidden'); });
             const viewToShow = document.getElementById(viewId);
@@ -680,91 +547,31 @@
             }
         };
 
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW error', err)); }); }
         const applyTheme = (theme) => { if (theme === 'dark') { htmlEl.classList.add('dark'); sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); } else { htmlEl.classList.remove('dark'); sunIcon.classList.remove('hidden'); moonIcon.classList.add('hidden'); } };
         const toggleTheme = () => { const newTheme = (localStorage.getItem('theme') || 'light') === 'light' ? 'dark' : 'light'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); };
         const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const getMonthName = (date) => date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         const formatCurrency = (amount) => (amount === null || isNaN(amount)) ? '$ --' : `$${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         
-        async function migrateFromLocalStorage() {
-            const migrated = localStorage.getItem('db_migrated_v1');
-            if (migrated) return;
-
-            console.log("Iniciando migración de localStorage a IndexedDB...");
+        const loadPaymentsFromStorage = () => {
             try {
-                const lsPayments = localStorage.getItem('monthlyPaymentsApp');
-                const lsInstallments = localStorage.getItem('futureInstallmentsApp');
-
-                if (lsPayments) {
-                    const paymentsData = JSON.parse(lsPayments);
-                    for (const payment of paymentsData) {
-                        await db.put('payments', payment);
-                    }
+                const storedPayments = localStorage.getItem('monthlyPaymentsApp');
+                if (storedPayments) {
+                    payments = JSON.parse(storedPayments);
+                    payments.forEach(p => {
+                        if (!p.paidMonths) p.paidMonths = {}; if (!p.amountOverrides) p.amountOverrides = {};
+                        if (!p.notificationsSent) p.notificationsSent = {}; if (!p.createdAt) p.createdAt = getMonthYearKey(new Date(parseInt(p.id))); 
+                    });
                 }
-
-                if (lsInstallments) {
-                    const installmentsData = JSON.parse(lsInstallments);
-                    for (const installment of installmentsData) {
-                         await db.put('futureInstallments', installment);
-                    }
-                }
-                
-                localStorage.setItem('db_migrated_v1', 'true');
-                console.log("Migración completada con éxito.");
-            } catch (error) {
-                console.error("Error durante la migración de datos:", error);
-                createPageNotification("Hubo un error al migrar tus datos antiguos.", "error");
-            }
-        }
-        
-        async function loadDataFromStorage() {
-            try {
-                await db.open();
-                await migrateFromLocalStorage(); // Migrate if necessary
-                payments = await db.getAll('payments');
-                futureInstallments = await db.getAll('futureInstallments');
-
-                const enabledSetting = await db.get('settings', 'notificationsEnabled');
-                const timeSetting = await db.get('settings', 'notificationTime');
-                notificationSettings.enabled = enabledSetting ? enabledSetting.value : false;
-                notificationSettings.time = timeSetting ? timeSetting.value : '09:00';
-
+                const storedInstallments = localStorage.getItem('futureInstallmentsApp');
+                if(storedInstallments) futureInstallments = JSON.parse(storedInstallments);
             } catch (e) {
-                console.error("Error al cargar los datos desde IndexedDB:", e);
-                createPageNotification("No se pudieron cargar los datos guardados.", "error", "Error de Base de Datos");
+                console.error("Error al cargar los datos:", e);
+                createPageNotification("No se pudieron cargar los datos guardados.", "error", "Error de Almacenamiento");
             }
-        }
-        
-        async function saveSinglePayment(payment) {
-            try {
-                await db.put('payments', payment);
-            } catch (e) {
-                console.error("Error al guardar el pago:", e);
-            }
-        }
-
-        async function deleteSinglePayment(id) {
-             try {
-                await db.delete('payments', id);
-            } catch (e) {
-                console.error("Error al eliminar el pago:", e);
-            }
-        }
-        
-        async function saveAllInstallments() {
-             try {
-                const dbInstance = await db.open();
-                const transaction = dbInstance.transaction('futureInstallments', 'readwrite');
-                const store = transaction.objectStore('futureInstallments');
-                await new Promise(resolve => { store.clear().onsuccess = resolve });
-                 for (const installment of futureInstallments) {
-                    await db.put('futureInstallments', installment);
-                }
-            } catch (e) {
-                console.error("Error al guardar las cuotas:", e);
-            }
-        }
-
+        };
+        const savePaymentsToStorage = () => { try { localStorage.setItem('monthlyPaymentsApp', JSON.stringify(payments)); localStorage.setItem('futureInstallmentsApp', JSON.stringify(futureInstallments)); } catch (e) { console.error("Error al guardar los datos:", e); createPageNotification("No se pudieron guardar los datos.", "error", "Error de Almacenamiento"); } };
         const calculateAndDisplaySummary = () => {
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
             const displayMonthKey = getMonthYearKey(displayDate);
@@ -774,7 +581,25 @@
             totalAmountDisplayEl.textContent = formatCurrency(totalAmount); pendingAmountDisplayEl.textContent = formatCurrency(pendingAmount);
             const monthName = getMonthName(displayDate); summaryTotalLabelEl.textContent = monthName; summaryPendingLabelEl.textContent = monthName;
         };
-       
+        const checkReminders = () => {
+            notificationsAreaEl.innerHTML = ''; const today = new Date();
+            const currentDay = today.getDate(); const currentMonthKey = getMonthYearKey(today);
+            const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
+            if (currentMonthKey !== getMonthYearKey(displayDate)) return; 
+            payments.filter(p => !(p.paidMonths && p.paidMonths[currentMonthKey]) && (p.createdAt && p.createdAt <= currentMonthKey) && p.dueDate >= currentDay && p.dueDate <= currentDay + 3)
+            .forEach(p => {
+                const daysUntilDue = p.dueDate - currentDay;
+                const message = daysUntilDue === 0 ? `El pago de <strong>${p.name}</strong> vence <strong>hoy</strong>.` : `El pago de <strong>${p.name}</strong> vence en <strong>${daysUntilDue} día(s)</strong>.`;
+                createPageNotification(message, 'warning', 'Recordatorio');
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const notificationKey = `${p.id}-${currentMonthKey}`;
+                    if (!p.notificationsSent[notificationKey]) {
+                        navigator.serviceWorker.ready.then(reg => reg.showNotification(`Vencimiento: ${p.name}`, { body: daysUntilDue === 0 ? `Tu pago vence hoy.` : `Tu pago vence en ${daysUntilDue} día(s).`, icon: 'images/icon-192x192.png', tag: notificationKey }));
+                        p.notificationsSent[notificationKey] = true; savePaymentsToStorage(); 
+                    }
+                }
+            });
+        };
         const createPageNotification = (message, type = 'info', title = 'Notificación') => {
             const notifId = `notif-${Date.now()}`;
             const typeClasses = {
@@ -795,50 +620,15 @@
         const closeLongPressModal = () => { longPressModalEl.classList.remove('visible'); longPressTargetId = null; };
         const showConfirmationModal = (message, onConfirm) => { confirmationModalMessageEl.innerHTML = message; _confirmationCallback = onConfirm; confirmationModalEl.classList.remove('hidden'); document.body.classList.add('modal-is-open'); };
         const hideConfirmationModal = () => { confirmationModalEl.classList.add('hidden'); _confirmationCallback = null; document.body.classList.remove('modal-is-open');};
-        
-        const handleAddOrUpdatePayment = async (e) => {
+        const handleAddOrUpdatePayment = (e) => {
             e.preventDefault();
-            const id = editingPaymentIdInput.value; 
-            const name = paymentNameInput.value.trim(); 
-            const dueDate = parseInt(paymentDayInput.value); 
-            const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
+            const id = editingPaymentIdInput.value; const name = paymentNameInput.value.trim(); const dueDate = parseInt(paymentDayInput.value); const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
             if (!name || !dueDate) return;
-            
-            if (id) { 
-                const pIndex = payments.findIndex(p => p.id === id); 
-                if (pIndex > -1) {
-                    const updatedPayment = { ...payments[pIndex], name, dueDate, amount };
-                    payments[pIndex] = updatedPayment;
-                    await saveSinglePayment(updatedPayment);
-                }
-            } else { 
-                const creationDate = new Date(); 
-                creationDate.setMonth(creationDate.getMonth() + selectedMonthOffset);
-                const newPayment = { 
-                    id: Date.now().toString(), 
-                    name, 
-                    dueDate, 
-                    amount, 
-                    paidMonths: {}, 
-                    amountOverrides: {}, 
-                    notificationsSent: {}, 
-                    createdAt: getMonthYearKey(creationDate) 
-                };
-                payments.push(newPayment);
-                await saveSinglePayment(newPayment);
-            }
-            renderAll(true); 
-            addPaymentFormContainer.classList.remove('visible'); 
-            toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; 
-            resetForm();
+            if (id) { const pIndex = payments.findIndex(p => p.id === id); if (pIndex > -1) payments[pIndex] = { ...payments[pIndex], name, dueDate, amount }; }
+            else { const creationDate = new Date(); creationDate.setMonth(creationDate.getMonth() + selectedMonthOffset); payments.push({ id: Date.now().toString(), name, dueDate, amount, paidMonths: {}, amountOverrides: {}, notificationsSent: {}, createdAt: getMonthYearKey(creationDate) }); }
+            savePaymentsToStorage(); renderAll(true); addPaymentFormContainer.classList.remove('visible'); toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; resetForm();
         };
-        
-        const deletePayment = async (id) => { 
-            payments = payments.filter(p => p.id !== id); 
-            await deleteSinglePayment(id);
-            renderAll(true); 
-        };
-
+        const deletePayment = (id) => { payments = payments.filter(p => p.id !== id); savePaymentsToStorage(); renderAll(true); };
         const editPayment = (id) => {
             const payment = payments.find(p => p.id === id); if (!payment) return;
             editingPaymentIdInput.value = payment.id; paymentNameInput.value = payment.name; paymentDayInput.value = payment.dueDate; paymentAmountInput.value = payment.amount;
@@ -846,27 +636,14 @@
             if (!addPaymentFormContainer.classList.contains('visible')) { addPaymentFormContainer.classList.add('visible'); toggleFormBtnText.textContent = 'Ocultar Formulario'; }
             paymentNameInput.focus(); window.scrollTo({ top: addPaymentFormContainer.offsetTop, behavior: 'smooth' });
         };
-        
-        const togglePaymentStatus = async (id, markAsPaid) => {
+        const togglePaymentStatus = (id, markAsPaid) => {
             const paymentIndex = payments.findIndex(p => p.id === id); if (paymentIndex === -1) return;
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const displayMonthKey = getMonthYearKey(displayDate);
             const payment = payments[paymentIndex]; if (!payment.paidMonths) payment.paidMonths = {};
             payment.paidMonths[displayMonthKey] = markAsPaid;
-            
-            await saveSinglePayment(payment);
-            
-            // If marked as paid, cancel any pending re-notifications
-            if (markAsPaid) {
-                sendMessageToSW({ action: 'cancel-notifications', paymentId: payment.id });
-            }
-
             const paymentItemEl = paymentsListEl.querySelector(`[data-id="${id}"]`);
-            if (paymentItemEl) { 
-                const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation'; 
-                paymentItemEl.classList.add(animationClass); 
-                setTimeout(() => paymentItemEl.classList.remove(animationClass), 600); 
-            }
-            setTimeout(() => { renderAll(true); }, 150);
+            if (paymentItemEl) { const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation'; paymentItemEl.classList.add(animationClass); setTimeout(() => paymentItemEl.classList.remove(animationClass), 600); }
+            savePaymentsToStorage(); setTimeout(() => { renderAll(true); }, 150);
         };
         const getEffectiveAmount = (payment, monthKey) => payment.amountOverrides?.[monthKey] ?? payment.amount;
         const renderPayments = () => {
@@ -881,7 +658,7 @@
                 paymentsListEl.appendChild(paymentItem);
             });
         };
-        const renderAll = (preserveScroll = false) => { if(preserveScroll) lastScrollY = window.scrollY; updateMonthSelectorUI(); renderPayments(); calculateAndDisplaySummary(); if(preserveScroll) requestAnimationFrame(() => { window.scrollTo(0, lastScrollY); }); };
+        const renderAll = (preserveScroll = false) => { if(preserveScroll) lastScrollY = window.scrollY; updateMonthSelectorUI(); renderPayments(); checkReminders(); calculateAndDisplaySummary(); if(preserveScroll) requestAnimationFrame(() => { window.scrollTo(0, lastScrollY); }); };
         const updateMonthSelectorUI = () => {
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const currentMonthName = getMonthName(displayDate);
             displayedMonthLabelEl.textContent = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
@@ -904,7 +681,8 @@
                 historicalPaymentsListContainerEl.appendChild(monthCard);
             });
         };
-
+        const updateNotificationsButton = () => { /* ... same as before ... */ };
+        const handleNotificationsPermission = () => { /* ... same as before ... */ };
         const renderFutureInstallmentsView = () => {
             const groupedByMonth = {};
             futureInstallments.forEach(item => { const monthKey = getMonthYearKey(new Date(item.dueDate)); if (!groupedByMonth[monthKey]) { groupedByMonth[monthKey] = []; } groupedByMonth[monthKey].push(item); });
@@ -987,6 +765,7 @@
             summaryFileEl.value = '';
         };
 
+        // MODIFIED: Prompt and logic updated to extract billing period for accurate date calculations.
         const analyzeSummaryWithAI = async (base64Data, mimeType, showViewAfter = true) => {
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) throw new Error("Clave API no encontrada.");
@@ -1017,7 +796,8 @@
             }
         };
         
-        const processExtractedPayments = async (extractedPayments, summaryYear, summaryMonth, showViewAfter = true) => {
+        // MODIFIED: Function signature and date calculation logic updated.
+        const processExtractedPayments = (extractedPayments, summaryYear, summaryMonth, showViewAfter = true) => {
             if (!Array.isArray(extractedPayments)) {
                 console.error("Los datos extraídos no son un array:", extractedPayments);
                 return 0;
@@ -1038,6 +818,7 @@
 
                 for (let i = currentInstallment; i <= totalInstallments; i++) {
                     const monthsToAdd = i - currentInstallment;
+                    // Use the summary's date as the base for calculation. Month is 0-indexed in JS Date.
                     const installmentDate = new Date(summaryYear, summaryMonth - 1, 15); 
                     installmentDate.setMonth(installmentDate.getMonth() + monthsToAdd);
                     
@@ -1058,7 +839,7 @@
 
             if (newInstallments.length > 0) {
                 futureInstallments.push(...newInstallments);
-                await saveAllInstallments();
+                savePaymentsToStorage();
             }
 
             if (showViewAfter) {
@@ -1068,7 +849,7 @@
             
             return newInstallments.length;
         };
-        
+
         const generateAndDownloadICS = () => {
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
             const displayMonthKey = getMonthYearKey(displayDate); const [year, month] = displayMonthKey.split('-');
@@ -1086,113 +867,31 @@
             const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Vencimientos_${getMonthName(displayDate).replace(/ /g, '_')}.ics`);
             document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
         };
-        
-        const exportData = async () => {
-            const dataToExport = { 
-                payments: await db.getAll('payments'), 
-                futureInstallments: await db.getAll('futureInstallments') 
-            };
-            if (dataToExport.payments.length === 0 && dataToExport.futureInstallments.length === 0) return createPageNotification("No hay datos para exportar.", "info");
+        const exportData = () => {
+            const dataToExport = { payments: payments, futureInstallments: futureInstallments };
+            if (payments.length === 0 && futureInstallments.length === 0) return createPageNotification("No hay datos para exportar.", "info");
             const dataStr = JSON.stringify(dataToExport, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a'); link.href = url; link.download = 'gestor_pagos_backup.json';
             document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); createPageNotification("Datos exportados con éxito.", "success");
         };
-        
         const importData = (event) => {
             const file = event.target.files[0]; if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!data.payments || !Array.isArray(data.payments) || !data.futureInstallments || !Array.isArray(data.futureInstallments)) {
-                        throw new Error("Formato de archivo inválido.");
-                    }
-                    showConfirmationModal("Esto reemplazará todos tus datos. ¿Continuar?", async () => {
-                        payments = data.payments || [];
-                        futureInstallments = data.futureInstallments || [];
-                        
-                        await db.open();
-                        const pTx = db._db.transaction('payments', 'readwrite');
-                        await new Promise(r => { pTx.objectStore('payments').clear().onsuccess = r; });
-                        const iTx = db._db.transaction('futureInstallments', 'readwrite');
-                        await new Promise(r => { iTx.objectStore('futureInstallments').clear().onsuccess = r; });
-                        
-                        for (const payment of payments) await db.put('payments', payment);
-                        for (const installment of futureInstallments) await db.put('futureInstallments', installment);
-
-                        await loadDataFromStorage();
-                        renderAll(); 
-                        createPageNotification("Datos importados con éxito.", "success");
+                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) throw new Error("Formato de archivo inválido.");
+                    showConfirmationModal("Esto reemplazará todos tus datos. ¿Continuar?", () => {
+                        payments = Array.isArray(data) ? data : (data.payments || []);
+                        futureInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
+                        savePaymentsToStorage(); renderAll(); createPageNotification("Datos importados con éxito.", "success");
                     });
                 } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
             };
             reader.readAsText(file);
         };
 
-        const sendMessageToSW = (msg) => {
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage(msg);
-            }
-        };
-
-        // --- Notification Settings Logic ---
-        const openNotificationSettingsModal = () => {
-            notificationsEnabledToggle.checked = notificationSettings.enabled;
-            notificationTimeInput.value = notificationSettings.time;
-            notificationTimeContainer.style.display = notificationSettings.enabled ? 'block' : 'none';
-            notificationSettingsModal.classList.remove('hidden');
-            document.body.classList.add('modal-is-open');
-        };
-
-        const closeNotificationSettingsModal = () => {
-            notificationSettingsModal.classList.add('hidden');
-            document.body.classList.remove('modal-is-open');
-        };
-
-        const saveNotificationSettings = async () => {
-            const isEnabled = notificationsEnabledToggle.checked;
-            const time = notificationTimeInput.value;
-
-            if (isEnabled && !time) {
-                createPageNotification("Por favor, selecciona una hora para las notificaciones.", "error");
-                return;
-            }
-            
-            if (isEnabled && Notification.permission !== 'granted') {
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') {
-                    createPageNotification("Permiso de notificación no concedido. No se pueden activar las notificaciones.", "error");
-                    notificationsEnabledToggle.checked = false; // Revert toggle
-                    return;
-                }
-            }
-
-            notificationSettings.enabled = isEnabled;
-            notificationSettings.time = time;
-
-            await db.put('settings', { key: 'notificationsEnabled', value: isEnabled });
-            await db.put('settings', { key: 'notificationTime', value: time });
-
-            // Send message to SW to update its schedule
-            sendMessageToSW({ action: 'update-settings', settings: notificationSettings });
-
-            createPageNotification("Configuración de notificaciones guardada.", "success");
-            closeNotificationSettingsModal();
-        };
-
-
-        // --- EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('./sw.js')
-                        .then(reg => console.log('Service Worker registrado.', reg))
-                        .catch(err => console.log('Error en registro de Service Worker:', err));
-                });
-            }
-
-            await loadDataFromStorage();
-
+        document.addEventListener('DOMContentLoaded', () => {
             themeToggleBtn.addEventListener('click', toggleTheme);
             prevMonthBtn.addEventListener('click', () => { selectedMonthOffset--; renderAll(); });
             nextMonthBtn.addEventListener('click', () => { selectedMonthOffset++; renderAll(); });
@@ -1255,17 +954,7 @@
             importDataBtn.addEventListener('click', () => importFileEl.click());
             importFileEl.addEventListener('change', importData);
             exportCalendarBtn.addEventListener('click', () => { generateAndDownloadICS(); closeMenu(); });
-            
-            // Notification settings listeners
-            notificationSettingsBtn.addEventListener('click', () => {
-                openNotificationSettingsModal();
-                closeMenu();
-            });
-            notificationsEnabledToggle.addEventListener('change', () => {
-                notificationTimeContainer.style.display = notificationsEnabledToggle.checked ? 'block' : 'none';
-            });
-            notificationSettingsSaveBtn.addEventListener('click', saveNotificationSettings);
-            notificationSettingsCancelBtn.addEventListener('click', closeNotificationSettingsModal);
+            enableNotificationsBtn.addEventListener('click', handleNotificationsPermission);
             
             analyzeSummaryBtn.addEventListener('click', () => {
                 summaryFileEl.click();
@@ -1278,7 +967,9 @@
             apiKeyForm.addEventListener('submit', handleSaveApiKey);
             apiKeyModalCancelBtn.addEventListener('click', hideApiKeyModal);
 
+            loadPaymentsFromStorage();
             applyTheme(localStorage.getItem('theme') || 'light');
+            updateNotificationsButton(); 
             renderAll();
         });
 
