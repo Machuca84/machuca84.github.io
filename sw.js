@@ -64,8 +64,6 @@ async function checkForPaymentsAndNotify() {
 
         for (const payment of duePayments) {
             const notificationKey = `${payment.id}-${currentMonthKey}`;
-            // Esta comprobación simple ayuda a no notificar múltiples veces
-            // Una solución más robusta podría guardar el estado de notificación en IndexedDB
             const alreadyNotified = await getDataFromDB(db, `notified-${notificationKey}`);
 
             if (!alreadyNotified) {
@@ -75,11 +73,8 @@ async function checkForPaymentsAndNotify() {
                 await self.registration.showNotification('Recordatorio de Vencimiento', {
                     body: body,
                     icon: 'images/icon-192x192.png',
-                    tag: notificationKey // El tag evita notificaciones duplicadas idénticas
+                    tag: notificationKey 
                 });
-
-                // Marcar como notificado (solución simple)
-                // Se podría implementar una lógica de guardado más compleja si fuera necesario
             }
         }
     } catch (error) {
@@ -111,17 +106,17 @@ self.addEventListener('notificationclick', event => {
                 }
             }
             if (clients.openWindow) {
-                return clients.openWindow('/');
+                // ** LÍNEA CORREGIDA **
+                // Debe apuntar a la raíz '/' porque tu repo es del tipo <usuario>.github.io
+                return clients.openWindow('/'); 
             }
         })
     );
 });
 
-// ¡NUEVO EVENTO! Este es el motor que te falta.
 self.addEventListener('periodicsync', event => {
     console.log('Service Worker: Evento de sincronización periódica recibido.', event.tag);
     if (event.tag === 'check-reminders-sync') {
-        // waitUntil asegura que el SW no se duerma hasta que la promesa termine.
         event.waitUntil(checkForPaymentsAndNotify());
     }
 });
