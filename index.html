@@ -1264,8 +1264,9 @@
             notificationsEnabledToggle.addEventListener('change', () => {
                 notificationTimeContainer.style.display = notificationsEnabledToggle.checked ? 'block' : 'none';
             });
-            notificationSettingsSaveBtn.addEventListener('click', saveNotificationSettings);
             notificationSettingsCancelBtn.addEventListener('click', closeNotificationSettingsModal);
+            // MODIFIED: Added event listener for the save button
+            notificationSettingsSaveBtn.addEventListener('click', saveNotificationSettings);
             
             analyzeSummaryBtn.addEventListener('click', () => {
                 summaryFileEl.click();
