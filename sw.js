@@ -34,7 +34,7 @@ self.addEventListener('notificationclick', event => {
       if (clients.openWindow) {
         // Cambia '/' por la ruta a tu archivo HTML si no está en la raíz.
         // Por ejemplo: '/gestor-pagos.html'
-        return clients.openWindow('/'); 
+        return clients.openWindow('index.html'); 
       }
     })
   );
