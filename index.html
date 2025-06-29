@@ -47,7 +47,7 @@
         .dark .history-month-card h3 { color: #c7d2fe; } 
         .dark .history-item { border-color: #4b5563;} 
         .dark .history-item p, .dark .history-month-summary p { color: #cbd5e1; } 
-        .dark .history-item .text-slate-500 { color: #94a3b8; } 
+        .dark .history-item .text-slate-500 { color: #94a3b8; }
 
 
         .dark input[type="text"],
@@ -363,9 +363,11 @@
                         Cerrar
                     </button>
                 </div>
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-4 sm:p-6 mb-6">
+                <div id="chartCard" class="bg-white rounded-lg shadow-xl p-4 sm:p-6 mb-6">
                     <h2 class="text-xl font-semibold mb-4">Proyección de Gastos en Cuotas</h2>
-                    <canvas id="installmentsChart"></canvas>
+                    <div id="installmentsChartContainer" class="relative h-96">
+                        <canvas id="installmentsChart"></canvas>
+                    </div>
                 </div>
                 <div id="futureInstallmentsListContainer" class="space-y-6">
                 </div>
@@ -548,8 +550,28 @@
         };
 
         if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW error', err)); }); }
-        const applyTheme = (theme) => { if (theme === 'dark') { htmlEl.classList.add('dark'); sunIcon.classList.add('hidden'); moonIcon.classList.remove('hidden'); } else { htmlEl.classList.remove('dark'); sunIcon.classList.remove('hidden'); moonIcon.classList.add('hidden'); } };
-        const toggleTheme = () => { const newTheme = (localStorage.getItem('theme') || 'light') === 'light' ? 'dark' : 'light'; localStorage.setItem('theme', newTheme); applyTheme(newTheme); };
+        
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                htmlEl.classList.add('dark');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            } else {
+                htmlEl.classList.remove('dark');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
+        };
+
+        const toggleTheme = () => {
+            const newTheme = (localStorage.getItem('theme') || 'light') === 'light' ? 'dark' : 'light';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+            if (installmentsChartInstance) {
+                renderFutureInstallmentsView();
+            }
+        };
+
         const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const getMonthName = (date) => date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         const formatCurrency = (amount) => (amount === null || isNaN(amount)) ? '$ --' : `$${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -683,12 +705,36 @@
         };
         const updateNotificationsButton = () => { /* ... same as before ... */ };
         const handleNotificationsPermission = () => { /* ... same as before ... */ };
+        
         const renderFutureInstallmentsView = () => {
             const groupedByMonth = {};
             futureInstallments.forEach(item => { const monthKey = getMonthYearKey(new Date(item.dueDate)); if (!groupedByMonth[monthKey]) { groupedByMonth[monthKey] = []; } groupedByMonth[monthKey].push(item); });
             const sortedMonthKeys = Object.keys(groupedByMonth).sort();
             futureInstallmentsListContainerEl.innerHTML = '';
-            if (sortedMonthKeys.length === 0) { futureInstallmentsListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay datos de cuotas futuras. Analiza un resumen para empezar.</p></div>`; if(installmentsChartInstance) { installmentsChartInstance.destroy(); installmentsChartInstance = null; } return; }
+            
+            const chartContainer = document.getElementById('installmentsChartContainer');
+            const chartCard = document.getElementById('chartCard');
+
+            const isDarkMode = localStorage.getItem('theme') === 'dark';
+
+            if(chartCard) {
+                // Forcefully set the background color of the chart's parent card
+                chartCard.classList.remove('bg-white', 'dark:bg-slate-800'); // Remove Tailwind classes to avoid conflict
+                chartCard.style.backgroundColor = isDarkMode ? '#1e293b' : '#ffffff'; 
+            }
+
+            if (sortedMonthKeys.length === 0) { 
+                futureInstallmentsListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay datos de cuotas futuras. Analiza un resumen para empezar.</p></div>`; 
+                if(installmentsChartInstance) { 
+                    installmentsChartInstance.destroy(); 
+                    installmentsChartInstance = null; 
+                } 
+                chartContainer.style.display = 'none';
+                return; 
+            } else {
+                chartContainer.style.display = 'block';
+            }
+
             const chartLabels = []; const chartData = [];
             sortedMonthKeys.forEach(monthKey => {
                 const monthDate = new Date(monthKey + '-02'); const monthName = getMonthName(monthDate); chartLabels.push(monthName.charAt(0).toUpperCase() + monthName.slice(1));
@@ -700,10 +746,76 @@
                 monthCard.querySelector('.history-month-header').addEventListener('click', (e) => { detailsContainer.classList.toggle('hidden'); e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded'); });
                 futureInstallmentsListContainerEl.appendChild(monthCard);
             });
-            if (installmentsChartInstance) installmentsChartInstance.destroy();
-            installmentsChartInstance = new Chart(installmentsChartEl, { type: 'bar', data: { labels: chartLabels, datasets: [{ label: 'Total de Cuotas por Mes', data: chartData, backgroundColor: 'rgba(79, 70, 229, 0.8)', borderColor: 'rgba(79, 70, 229, 1)', borderWidth: 1 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { callback: (value) => formatCurrency(value) } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => formatCurrency(context.parsed.y) } } } } });
+            
+            const dynamicHeight = Math.max(250, chartLabels.length * 40);
+            chartContainer.style.height = `${dynamicHeight}px`;
+
+            if (installmentsChartInstance) {
+                installmentsChartInstance.destroy();
+            }
+            
+            const tickColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+            const tooltipTitleColor = isDarkMode ? '#a5b4fc' : '#4f46e5';
+            const tooltipBodyColor = isDarkMode ? '#e2e8f0' : '#1f2937';
+            const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+            const tooltipBgColor = isDarkMode ? '#1f2937' : '#ffffff';
+
+            installmentsChartInstance = new Chart(installmentsChartEl, { 
+                type: 'bar', 
+                data: { 
+                    labels: chartLabels, 
+                    datasets: [{ 
+                        label: 'Total de Cuotas por Mes', 
+                        data: chartData, 
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)', 
+                        borderColor: 'rgba(79, 70, 229, 1)', 
+                        borderWidth: 1 
+                    }] 
+                }, 
+                options: { 
+                    indexAxis: 'y',
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        axis: 'y',
+                        intersect: false
+                    },
+                    scales: { 
+                        x: { 
+                            beginAtZero: true, 
+                            ticks: { 
+                                callback: (value) => formatCurrency(value),
+                                color: tickColor 
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        y: {
+                           ticks: {
+                               color: tickColor
+                           },
+                           grid: {
+                                color: gridColor
+                            }
+                        }
+                    }, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            titleColor: tooltipTitleColor,
+                            bodyColor: tooltipBodyColor,
+                            backgroundColor: tooltipBgColor,
+                            callbacks: { 
+                                label: (context) => formatCurrency(context.parsed.x)
+                            } 
+                        } 
+                    } 
+                } 
+            });
         };
-        
+
         const readFileAsBase64 = (file) => {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -765,7 +877,6 @@
             summaryFileEl.value = '';
         };
 
-        // MODIFIED: Prompt and logic updated to extract billing period for accurate date calculations.
         const analyzeSummaryWithAI = async (base64Data, mimeType, showViewAfter = true) => {
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) throw new Error("Clave API no encontrada.");
@@ -796,7 +907,6 @@
             }
         };
         
-        // MODIFIED: Function signature and date calculation logic updated.
         const processExtractedPayments = (extractedPayments, summaryYear, summaryMonth, showViewAfter = true) => {
             if (!Array.isArray(extractedPayments)) {
                 console.error("Los datos extraídos no son un array:", extractedPayments);
@@ -818,7 +928,6 @@
 
                 for (let i = currentInstallment; i <= totalInstallments; i++) {
                     const monthsToAdd = i - currentInstallment;
-                    // Use the summary's date as the base for calculation. Month is 0-indexed in JS Date.
                     const installmentDate = new Date(summaryYear, summaryMonth - 1, 15); 
                     installmentDate.setMonth(installmentDate.getMonth() + monthsToAdd);
                     
