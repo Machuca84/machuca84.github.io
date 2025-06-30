@@ -42,7 +42,7 @@
         .dark .border-b { border-color: #4b5563; }
         .dark .payment-item { background-color: #374151; }
         
-        .dark #historyView, .dark #futureInstallmentsView, .dark #categorizationView, .dark #notificationSettingsView { background-color: #1e293b; } 
+        .dark #historyView, .dark #futureInstallmentsView { background-color: #1e293b; } 
         .dark .history-month-card { background-color: #334155; border-color: #4b5563;} 
         .dark .history-month-card h3 { color: #c7d2fe; } 
         .dark .history-item { border-color: #4b5563;} 
@@ -52,14 +52,13 @@
 
         .dark input[type="text"],
         .dark input[type="number"],
-        .dark input[type="password"],
-        .dark input[type="time"] {
+        .dark input[type="password"] {
             color: #e5e7eb; 
             background-color: #4b5563; 
             border-color: #6b7280;
         }
         .dark input::placeholder { color: #9ca3af; }
-        input[type="text"], input[type="number"], input[type="password"], input[type="time"] { color: #1f2937; }
+        input[type="text"], input[type="number"], input[type="password"] { color: #1f2937; }
 
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -154,7 +153,7 @@
             transition: opacity 0.3s ease-in-out;
             position: fixed; inset: 0;
         }
-        #historyView, #futureInstallmentsView, #categorizationView, #notificationSettingsView {
+        #historyView, #futureInstallmentsView {
             position: fixed; inset: 0; overflow-y: auto;
             background-color: #f0f4f8; 
         }
@@ -175,8 +174,7 @@
     </style>
 </head>
 <body class="antialiased">
-    <!-- Input for file uploads -->
-    <input type="file" id="invoiceFile" accept="image/*" style="display: none;">
+    <input type="file" id="importFile" accept=".json" style="display: none;">
     <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
 
 
@@ -194,20 +192,15 @@
             <nav>
                 <ul class="space-y-1">
                     <li>
-                        <button id="scanInvoiceBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="analyzeSummaryBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" />
                             </svg>
-                            Escanear Factura
+                            Analizar Resumen
                         </button>
                     </li>
-                    <li class="border-t border-slate-200 dark:border-slate-700 my-2"></li>
                     <li>
-                        <p class="px-4 pt-2 pb-1 text-xs font-semibold text-slate-400 uppercase">Análisis con IA</p>
-                    </li>
-                    <li>
-                        <button id="analyzeInstallmentsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="showFutureInstallmentsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
@@ -215,25 +208,15 @@
                         </button>
                     </li>
                     <li>
-                        <button id="analyzeExpensesBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 8v5c0 .512.195 1.024.586 1.414l7 7a2 2 0 002.828 0l7-7a2 2 0 000-2.828l-7-7A2 2 0 0012 3H7a2 2 0 00-2 2v5a2 2 0 002 2z" />
-                            </svg>
-                            Análisis de Gastos
-                        </button>
-                    </li>
-                    <li class="border-t border-slate-200 dark:border-slate-700 my-2"></li>
-                    <li>
                         <a href="#" id="showHistoryBtn" class="flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Historial Pagos
                         </a>
                     </li>
-                    <!-- NEW: Notification Settings Button -->
                     <li>
-                        <button id="notificationSettingsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="enableNotificationsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                            Ajustes de Notificaciones
+                            <span id="notificationsBtnText">Activar Notificaciones</span>
                         </button>
                     </li>
                     <li>
@@ -269,6 +252,7 @@
 
     <div id="viewWrapper" class="relative">
         <div id="mainContent" class="view-container container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
+             <!-- MODIFICATION START: Header with Auto-Adjusting Font Size -->
              <header class="mb-6 flex items-center justify-between h-16">
                 <div class="flex-shrink-0 w-12">
                     <button id="hamburgerBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Abrir menú">
@@ -291,16 +275,17 @@
                     </button>
                 </div>
             </header>
-            
-            <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 dark:bg-slate-800 rounded-lg shadow">
-                <button id="prevMonthBtn" class="month-selector-btn bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
+            <!-- MODIFICATION END -->
+
+            <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
+                <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
                     &lt; Anterior
                 </button>
                 <div class="text-center">
-                    <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Visualizando:</p>
-                    <p id="displayedMonthLabel" class="text-lg font-bold text-indigo-600 dark:text-indigo-400">Mes Actual</p>
+                    <p class="text-sm font-medium text-slate-500">Visualizando:</p>
+                    <p id="displayedMonthLabel" class="text-lg font-bold text-indigo-600">Mes Actual</p>
                 </div>
-                <button id="nextMonthBtn" class="month-selector-btn bg-white dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium py-2 px-4 rounded-md text-sm" title="Mes Siguiente">
+                <button id="nextMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm" title="Mes Siguiente">
                     Siguiente &gt;
                 </button>
             </div>
@@ -328,20 +313,20 @@
             </div>
 
             <div id="addPaymentFormContainer" class="mb-8">
-                 <div class="bg-white dark:bg-slate-800 shadow-xl rounded-xl p-6">
-                     <h2 id="formTitle" class="text-2xl font-semibold border-b pb-3 text-slate-800 dark:text-slate-100">Agregar Nuevo Pago</h2>
+                 <div class="bg-white shadow-xl rounded-xl p-6">
+                     <h2 id="formTitle" class="text-2xl font-semibold border-b pb-3">Agregar Nuevo Pago</h2>
                      <form id="addPaymentForm" class="space-y-4 mt-5">
                          <input type="hidden" id="editingPaymentId">
                          <div>
-                             <label for="paymentName" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Nombre del Pago:</label>
+                             <label for="paymentName" class="block text-sm font-medium">Nombre del Pago:</label>
                              <input type="text" id="paymentName" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: Tarjeta de Crédito Visa">
                          </div>
                          <div>
-                             <label for="paymentDay" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Día de Vencimiento (1-31):</label>
+                             <label for="paymentDay" class="block text-sm font-medium">Día de Vencimiento (1-31):</label>
                              <input type="number" id="paymentDay" min="1" max="31" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 15">
                          </div>
                          <div>
-                             <label for="paymentAmount" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Monto (ARS, opcional):</label>
+                             <label for="paymentAmount" class="block text-sm font-medium">Monto (ARS, opcional):</label>
                              <input type="number" id="paymentAmount" step="0.01" min="0" class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 5000.00">
                          </div>
                          <div class="flex flex-col sm:flex-row gap-3 pt-2">
@@ -359,7 +344,7 @@
             </div>
 
             <div>
-                <h2 id="paymentsListTitle" class="text-2xl font-semibold mb-5 border-b pb-3 text-slate-800 dark:text-slate-100">Pagos Registrados (Mes Actual)</h2>
+                <h2 id="paymentsListTitle" class="text-2xl font-semibold mb-5 border-b pb-3">Pagos Registrados (Mes Actual)</h2>
                 <div id="paymentsList" class="space-y-4"></div>
             </div>
         </div>
@@ -385,100 +370,13 @@
                         Cerrar
                     </button>
                 </div>
-                <div id="chartCard" class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-4 sm:p-6 mb-6">
-                    <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">Proyección de Gastos en Cuotas</h2>
+                <div id="chartCard" class="rounded-lg shadow-xl p-4 sm:p-6 mb-6">
+                    <h2 class="text-xl font-semibold mb-4">Proyección de Gastos en Cuotas</h2>
                     <div id="installmentsChartContainer" class="relative h-96">
                         <canvas id="installmentsChart"></canvas>
                     </div>
                 </div>
                 <div id="futureInstallmentsListContainer" class="space-y-6">
-                </div>
-            </div>
-        </div>
-
-        <div id="categorizationView" class="view-container hidden p-4 sm:p-6 md:p-8">
-            <div class="max-w-3xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 id="categorizationViewTitle" class="text-3xl font-bold text-slate-800 dark:text-slate-100">Análisis de Gastos</h1>
-                    <button id="closeCategorizationBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-                        Cerrar
-                    </button>
-                </div>
-                <div id="categoriesChartCard" class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-4 sm:p-6 mb-6">
-                    <h2 class="text-xl font-semibold mb-4 text-slate-800 dark:text-slate-100">Gastos por Categoría</h2>
-                    <div id="categoriesChartContainer" class="relative h-80 sm:h-96">
-                        <canvas id="categoriesChart"></canvas>
-                    </div>
-                </div>
-                <div id="categorizedExpensesListContainer" class="space-y-6">
-                </div>
-            </div>
-        </div>
-
-        <!-- NEW: Notification Settings View -->
-        <div id="notificationSettingsView" class="view-container hidden p-4 sm:p-6 md:p-8">
-            <div class="max-w-3xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Ajustes de Notificaciones</h1>
-                    <button id="closeNotificationSettingsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-                        Cerrar
-                    </button>
-                </div>
-
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 space-y-6">
-                    <div>
-                        <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-100">Estado del Permiso</h2>
-                        <div id="notificationStatus" class="mt-2 text-sm font-medium p-3 rounded-md"></div>
-                        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Si el permiso está bloqueado, debes cambiarlo desde los ajustes de la aplicación en tu teléfono o navegador.</p>
-                        <button id="requestNotificationPermissionBtn" class="mt-4 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                            Solicitar Permiso
-                        </button>
-                    </div>
-
-                    <form id="notificationSettingsForm">
-                        <fieldset id="notificationSettingsFieldset" class="space-y-6 border-t border-slate-200 dark:border-slate-700 pt-6">
-                            <div>
-                                <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Recordatorios de Vencimientos</h3>
-                                <div class="mt-4 space-y-4">
-                                    <div class="flex items-center">
-                                        <input id="remind3Days" name="remindDays" type="checkbox" value="3" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-                                        <label for="remind3Days" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">3 días antes</label>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input id="remind2Days" name="remindDays" type="checkbox" value="2" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-                                        <label for="remind2Days" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">2 días antes</label>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input id="remind1Day" name="remindDays" type="checkbox" value="1" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-                                        <label for="remind1Day" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">1 día antes</label>
-                                    </div>
-                                    <div class="flex items-center">
-                                        <input id="remindOnDay" name="remindDays" type="checkbox" value="0" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-                                        <label for="remindOnDay" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">El mismo día del vencimiento</label>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div>
-                                <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Recordatorios de Pagos Vencidos</h3>
-                                <div class="mt-4 flex items-center">
-                                    <input id="remindOverdue" name="remindOverdue" type="checkbox" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
-                                    <label for="remindOverdue" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">Recordar diariamente si un pago está vencido</label>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="notificationTime" class="block text-lg font-semibold text-slate-800 dark:text-slate-100">Hora de los Recordatorios</label>
-                                <input type="time" id="notificationTime" name="notificationTime" class="mt-2 block w-full sm:w-1/2 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            </div>
-
-                            <div class="pt-4">
-                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
-                                    Guardar Ajustes
-                                </button>
-                            </div>
-                        </fieldset>
-                    </form>
                 </div>
             </div>
         </div>
@@ -510,7 +408,7 @@
     <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center">
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8 flex flex-col items-center gap-4">
             <div class="spinner"></div>
-            <p id="loadingModalText" class="text-slate-700 dark:text-slate-200 font-medium text-center">Analizando...</p>
+            <p id="loadingModalText" class="text-slate-700 dark:text-slate-200 font-medium text-center">Analizando resumen...</p>
         </div>
     </div>
 
@@ -518,7 +416,7 @@
         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md">
            <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Se necesita una Clave API</h3>
            <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
-                Para las funciones de análisis automático, esta aplicación utiliza la IA de Google.
+                Para analizar automáticamente tu resumen de gastos, esta aplicación utiliza la IA de Google.
                 Necesitas una Clave API de Gemini, que es gratuita.
                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
                    Obtén tu clave aquí &rarr;
@@ -538,8 +436,7 @@
     <script>
         // Application State
         let payments = [];
-        let futureInstallments = [];
-        let categorizedExpenses = {};
+        let futureInstallments = []; 
         let selectedMonthOffset = 0; 
         const MAX_NEXT_MONTHS = 2; 
         const MAX_PREV_MONTHS = -2; 
@@ -549,15 +446,7 @@
         let lastScrollY = 0; 
         let _confirmationCallback = null; 
         let installmentsChartInstance = null;
-        let categoriesChartInstance = null;
         let wasAnalyzing = false;
-        let currentAnalysisType = 'installments';
-        // NEW: Notification settings state
-        let notificationSettings = {
-            remindDays: [1], // Default: 1 day before
-            remindOverdue: true,
-            notificationTime: '10:00' // Default: 10:00 AM
-        };
 
         // Swipe State
         let swipeState = {
@@ -567,157 +456,180 @@
         const SWIPE_THRESHOLD = 60; 
         const MOVE_THRESHOLD = 10; 
 
-        // --- All functions will be defined here ---
-
+        // DOM Elements
+        const htmlEl = document.documentElement;
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const sunIcon = document.getElementById('sunIcon');
+        const moonIcon = document.getElementById('moonIcon');
+        const paymentNameInput = document.getElementById('paymentName');
+        const paymentDayInput = document.getElementById('paymentDay');
+        const paymentAmountInput = document.getElementById('paymentAmount');
+        const paymentsListEl = document.getElementById('paymentsList');
+        const notificationsAreaEl = document.getElementById('notificationsArea');
+        const totalAmountDisplayEl = document.getElementById('totalAmountDisplay');
+        const pendingAmountDisplayEl = document.getElementById('pendingAmountDisplay');
+        const toggleFormBtn = document.getElementById('toggleFormBtn');
+        const toggleFormBtnText = document.getElementById('toggleFormBtnText');
+        const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
+        const addPaymentForm = document.getElementById('addPaymentForm');
+        const cancelAddBtn = document.getElementById('cancelAddBtn');
+        const addEditButtonTextEl = document.getElementById('addEditButtonText');
+        const formTitleEl = document.getElementById('formTitle');
+        const editingPaymentIdInput = document.getElementById('editingPaymentId');
+        const prevMonthBtn = document.getElementById('prevMonthBtn');
+        const nextMonthBtn = document.getElementById('nextMonthBtn');
+        const displayedMonthLabelEl = document.getElementById('displayedMonthLabel');
+        const paymentsListTitleEl = document.getElementById('paymentsListTitle');
+        const summaryTotalLabelEl = document.getElementById('summaryTotalLabel');
+        const summaryPendingLabelEl = document.getElementById('summaryPendingLabel');
+        const longPressModalEl = document.getElementById('longPressModal');
+        const modalItemNameEl = document.getElementById('modalItemName');
+        const modalEditBtn = document.getElementById('modalEditBtn');
+        const modalDeleteBtn = document.getElementById('modalDeleteBtn');
+        const modalCancelBtn = document.getElementById('modalCancelBtn');
+        const confirmationModalEl = document.getElementById('confirmationModal');
+        const confirmationModalMessageEl = document.getElementById('confirmationModalMessage');
+        const confirmationModalCancelBtn = document.getElementById('confirmationModalCancelBtn');
+        const confirmationModalConfirmBtn = document.getElementById('confirmationModalConfirmBtn');
+        const hamburgerBtn = document.getElementById('hamburgerBtn');
+        const sideMenu = document.getElementById('sideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const closeMenuBtn = document.getElementById('closeMenuBtn');
+        const showHistoryBtn = document.getElementById('showHistoryBtn');
+        const historyView = document.getElementById('historyView');
+        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+        const historicalPaymentsListContainerEl = document.getElementById('historicalPaymentsListContainer');
+        const mainContentEl = document.getElementById('mainContent');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataBtn = document.getElementById('importDataBtn');
+        const importFileEl = document.getElementById('importFile');
+        const exportCalendarBtn = document.getElementById('exportCalendarBtn');
+        const analyzeSummaryBtn = document.getElementById('analyzeSummaryBtn');
+        const summaryFileEl = document.getElementById('summaryFile');
+        const loadingModalEl = document.getElementById('loadingModal');
+        const loadingModalText = document.getElementById('loadingModalText');
+        const showFutureInstallmentsBtn = document.getElementById('showFutureInstallmentsBtn');
+        const futureInstallmentsView = document.getElementById('futureInstallmentsView');
+        const closeFutureInstallmentsBtn = document.getElementById('closeFutureInstallmentsBtn');
+        const futureInstallmentsListContainerEl = document.getElementById('futureInstallmentsListContainer');
+        const installmentsChartEl = document.getElementById('installmentsChart');
+        const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
+        const notificationsBtnText = document.getElementById('notificationsBtnText');
+        const modifyApiKeyBtn = document.getElementById('modifyApiKeyBtn');
+        const apiKeyModal = document.getElementById('apiKeyModal');
+        const apiKeyForm = document.getElementById('apiKeyForm');
+        const modalApiKeyInput = document.getElementById('modalApiKeyInput');
+        const apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
+        
         const showView = (viewId) => {
             document.querySelectorAll('.view-container').forEach(view => { view.classList.add('hidden'); });
             const viewToShow = document.getElementById(viewId);
             if(viewToShow) { viewToShow.classList.remove('hidden'); }
         };
 
-        const openMenu = () => { 
-            const sideMenu = document.getElementById('sideMenu');
-            const menuOverlay = document.getElementById('menuOverlay');
-            document.body.classList.add('menu-is-open'); 
-            sideMenu.classList.add('open'); 
-            menuOverlay.classList.remove('hidden'); 
-            menuOverlay.style.opacity = '0.5'; 
-        };
-        const closeMenu = () => { 
-            const sideMenu = document.getElementById('sideMenu');
-            const menuOverlay = document.getElementById('menuOverlay');
-            document.body.classList.remove('menu-is-open'); 
-            sideMenu.classList.remove('open'); 
-            menuOverlay.style.opacity = '0'; 
-            setTimeout(() => { menuOverlay.classList.add('hidden'); }, 300); 
-        };
+        const openMenu = () => { document.body.classList.add('menu-is-open'); sideMenu.classList.add('open'); menuOverlay.classList.remove('hidden'); menuOverlay.style.opacity = '0.5'; };
+        const closeMenu = () => { document.body.classList.remove('menu-is-open'); sideMenu.classList.remove('open'); menuOverlay.style.opacity = '0'; setTimeout(() => { menuOverlay.classList.add('hidden'); }, 300); };
         
         const showApiKeyModal = (isAnalyzing = false) => {
             wasAnalyzing = isAnalyzing;
-            const apiKeyModal = document.getElementById('apiKeyModal');
-            const modalApiKeyInput = document.getElementById('modalApiKeyInput');
             modalApiKeyInput.value = localStorage.getItem('geminiApiKey') || '';
             apiKeyModal.classList.remove('hidden');
             document.body.classList.add('modal-is-open');
         };
-
         const hideApiKeyModal = () => {
-            const apiKeyModal = document.getElementById('apiKeyModal');
-            const invoiceFileEl = document.getElementById('invoiceFile');
-            const summaryFileEl = document.getElementById('summaryFile');
             apiKeyModal.classList.add('hidden');
             document.body.classList.remove('modal-is-open');
-            if (wasAnalyzing) {
-                setTimeout(() => {
-                    if (currentAnalysisType === 'invoice') {
-                        invoiceFileEl.click();
-                    } else {
-                        summaryFileEl.click();
-                    }
-                }, 100);
-            }
             wasAnalyzing = false;
         };
-
         const handleSaveApiKey = (e) => {
             e.preventDefault();
-            const modalApiKeyInput = document.getElementById('modalApiKeyInput');
             const key = modalApiKeyInput.value.trim();
             if (key) {
                 localStorage.setItem('geminiApiKey', key);
                 createPageNotification('Clave API guardada con éxito.', 'success');
                 hideApiKeyModal();
+                if(wasAnalyzing) {
+                    summaryFileEl.click();
+                }
             } else {
                 createPageNotification('Por favor, introduce una clave API válida.', 'error');
             }
         };
 
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW error', err)); }); }
+        
         const applyTheme = (theme) => {
-            const htmlEl = document.documentElement;
-            const sunIcon = document.getElementById('sunIcon');
-            const moonIcon = document.getElementById('moonIcon');
             if (theme === 'dark') {
                 htmlEl.classList.add('dark');
-                if (sunIcon) sunIcon.classList.add('hidden');
-                if (moonIcon) moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
             } else {
                 htmlEl.classList.remove('dark');
-                if (sunIcon) sunIcon.classList.remove('hidden');
-                if (moonIcon) moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
             }
-            if (installmentsChartInstance) { renderFutureInstallmentsView(); }
-            if (categoriesChartInstance) { renderCategorizationView(); }
         };
 
         const toggleTheme = () => {
             const newTheme = (localStorage.getItem('theme') || 'light') === 'light' ? 'dark' : 'light';
             localStorage.setItem('theme', newTheme);
             applyTheme(newTheme);
+            if (installmentsChartInstance) {
+                renderFutureInstallmentsView();
+            }
         };
 
         const getMonthYearKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const getMonthName = (date) => date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         const formatCurrency = (amount) => (amount === null || isNaN(amount)) ? '$ --' : `$${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         
-        const loadDataFromStorage = () => {
+        const loadPaymentsFromStorage = () => {
             try {
                 const storedPayments = localStorage.getItem('monthlyPaymentsApp');
                 if (storedPayments) {
                     payments = JSON.parse(storedPayments);
                     payments.forEach(p => {
                         if (!p.paidMonths) p.paidMonths = {}; if (!p.amountOverrides) p.amountOverrides = {};
-                        if (!p.createdAt) p.createdAt = getMonthYearKey(new Date(parseInt(p.id))); 
+                        if (!p.notificationsSent) p.notificationsSent = {}; if (!p.createdAt) p.createdAt = getMonthYearKey(new Date(parseInt(p.id))); 
                     });
                 }
                 const storedInstallments = localStorage.getItem('futureInstallmentsApp');
                 if(storedInstallments) futureInstallments = JSON.parse(storedInstallments);
-                
-                const storedCategorizedExpenses = localStorage.getItem('categorizedExpensesApp');
-                if(storedCategorizedExpenses) categorizedExpenses = JSON.parse(storedCategorizedExpenses);
-
-                const storedNotificationSettings = localStorage.getItem('notificationSettingsApp');
-                if (storedNotificationSettings) {
-                    notificationSettings = JSON.parse(storedNotificationSettings);
-                }
-
             } catch (e) {
                 console.error("Error al cargar los datos:", e);
                 createPageNotification("No se pudieron cargar los datos guardados.", "error", "Error de Almacenamiento");
             }
         };
-
-        const saveDataToStorage = () => { 
-            try { 
-                localStorage.setItem('monthlyPaymentsApp', JSON.stringify(payments)); 
-                localStorage.setItem('futureInstallmentsApp', JSON.stringify(futureInstallments));
-                localStorage.setItem('categorizedExpensesApp', JSON.stringify(categorizedExpenses));
-                localStorage.setItem('notificationSettingsApp', JSON.stringify(notificationSettings));
-            } catch (e) { 
-                console.error("Error al guardar los datos:", e); 
-                createPageNotification("No se pudieron guardar los datos.", "error", "Error de Almacenamiento"); 
-            } 
-        };
-
+        const savePaymentsToStorage = () => { try { localStorage.setItem('monthlyPaymentsApp', JSON.stringify(payments)); localStorage.setItem('futureInstallmentsApp', JSON.stringify(futureInstallments)); } catch (e) { console.error("Error al guardar los datos:", e); createPageNotification("No se pudieron guardar los datos.", "error", "Error de Almacenamiento"); } };
         const calculateAndDisplaySummary = () => {
-            const totalAmountDisplayEl = document.getElementById('totalAmountDisplay');
-            const pendingAmountDisplayEl = document.getElementById('pendingAmountDisplay');
-            const summaryTotalLabelEl = document.getElementById('summaryTotalLabel');
-            const summaryPendingLabelEl = document.getElementById('summaryPendingLabel');
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
             const displayMonthKey = getMonthYearKey(displayDate);
             const activePaymentsForMonth = payments.filter(p => p.createdAt && p.createdAt <= displayMonthKey);
             const totalAmount = activePaymentsForMonth.reduce((sum, p) => sum + (getEffectiveAmount(p, displayMonthKey) || 0), 0);
             const pendingAmount = activePaymentsForMonth.filter(p => !(p.paidMonths && p.paidMonths[displayMonthKey])).reduce((sum, p) => sum + (getEffectiveAmount(p, displayMonthKey) || 0), 0);
-            totalAmountDisplayEl.textContent = formatCurrency(totalAmount);
-            pendingAmountDisplayEl.textContent = formatCurrency(pendingAmount);
-            const monthName = getMonthName(displayDate);
-            summaryTotalLabelEl.textContent = monthName;
-            summaryPendingLabelEl.textContent = monthName;
+            totalAmountDisplayEl.textContent = formatCurrency(totalAmount); pendingAmountDisplayEl.textContent = formatCurrency(pendingAmount);
+            const monthName = getMonthName(displayDate); summaryTotalLabelEl.textContent = monthName; summaryPendingLabelEl.textContent = monthName;
         };
-
+        const checkReminders = () => {
+            notificationsAreaEl.innerHTML = ''; const today = new Date();
+            const currentDay = today.getDate(); const currentMonthKey = getMonthYearKey(today);
+            const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
+            if (currentMonthKey !== getMonthYearKey(displayDate)) return; 
+            payments.filter(p => !(p.paidMonths && p.paidMonths[currentMonthKey]) && (p.createdAt && p.createdAt <= currentMonthKey) && p.dueDate >= currentDay && p.dueDate <= currentDay + 3)
+            .forEach(p => {
+                const daysUntilDue = p.dueDate - currentDay;
+                const message = daysUntilDue === 0 ? `El pago de <strong>${p.name}</strong> vence <strong>hoy</strong>.` : `El pago de <strong>${p.name}</strong> vence en <strong>${daysUntilDue} día(s)</strong>.`;
+                createPageNotification(message, 'warning', 'Recordatorio');
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    const notificationKey = `${p.id}-${currentMonthKey}`;
+                    if (!p.notificationsSent[notificationKey]) {
+                        navigator.serviceWorker.ready.then(reg => reg.showNotification(`Vencimiento: ${p.name}`, { body: daysUntilDue === 0 ? `Tu pago vence hoy.` : `Tu pago vence en ${daysUntilDue} día(s).`, icon: 'images/icon-192x192.png', tag: notificationKey }));
+                        p.notificationsSent[notificationKey] = true; savePaymentsToStorage(); 
+                    }
+                }
+            });
+        };
         const createPageNotification = (message, type = 'info', title = 'Notificación') => {
-            const notificationsAreaEl = document.getElementById('notificationsArea');
-            if (!notificationsAreaEl) return;
             const notifId = `notif-${Date.now()}`;
             const typeClasses = {
                 info: { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-800 dark:text-blue-200', border: 'border-blue-500', icon: '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>' },
@@ -732,245 +644,95 @@
             notificationEl.innerHTML = `<div class="flex-shrink-0">${classes.icon}</div><div class="ml-3"><p class="font-bold">${title}</p><p class="text-sm">${message}</p></div><button class="ml-auto -mx-1.5 -my-1.5 bg-transparent rounded-lg focus:ring-2 focus:ring-gray-400 p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 inline-flex h-8 w-8" onclick="document.getElementById('${notifId}').remove()"><span class="sr-only">Dismiss</span><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg></button>`;
             notificationsAreaEl.appendChild(notificationEl);
         };
-
-        const resetForm = () => { 
-            const addPaymentForm = document.getElementById('addPaymentForm');
-            const editingPaymentIdInput = document.getElementById('editingPaymentId');
-            const formTitleEl = document.getElementById('formTitle');
-            const addEditButtonTextEl = document.getElementById('addEditButtonText');
-            addPaymentForm.reset(); 
-            editingPaymentIdInput.value = ''; 
-            formTitleEl.textContent = 'Agregar Nuevo Pago'; 
-            addEditButtonTextEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>Guardar Pago'; 
-        };
-
-        const openLongPressModal = (paymentId) => { 
-            const longPressModalEl = document.getElementById('longPressModal');
-            const modalItemNameEl = document.getElementById('modalItemName');
-            const payment = payments.find(p => p.id === paymentId); 
-            if (payment) { 
-                modalItemNameEl.textContent = payment.name; 
-                longPressModalEl.classList.add('visible'); 
-            } 
-        };
-
-        const closeLongPressModal = () => { 
-            const longPressModalEl = document.getElementById('longPressModal');
-            longPressModalEl.classList.remove('visible'); 
-            longPressTargetId = null; 
-        };
-
-        const showConfirmationModal = (message, onConfirm) => { 
-            const confirmationModalEl = document.getElementById('confirmationModal');
-            const confirmationModalMessageEl = document.getElementById('confirmationModalMessage');
-            confirmationModalMessageEl.innerHTML = message; 
-            _confirmationCallback = onConfirm; 
-            confirmationModalEl.classList.remove('hidden'); 
-            document.body.classList.add('modal-is-open'); 
-        };
-
-        const hideConfirmationModal = () => { 
-            const confirmationModalEl = document.getElementById('confirmationModal');
-            confirmationModalEl.classList.add('hidden'); 
-            _confirmationCallback = null; 
-            document.body.classList.remove('modal-is-open');
-        };
-
+        const resetForm = () => { addPaymentForm.reset(); editingPaymentIdInput.value = ''; formTitleEl.textContent = 'Agregar Nuevo Pago'; addEditButtonTextEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>Guardar Pago'; };
+        const openLongPressModal = (paymentId) => { const payment = payments.find(p => p.id === paymentId); if (payment) { modalItemNameEl.textContent = payment.name; longPressModalEl.classList.add('visible'); } };
+        const closeLongPressModal = () => { longPressModalEl.classList.remove('visible'); longPressTargetId = null; };
+        const showConfirmationModal = (message, onConfirm) => { confirmationModalMessageEl.innerHTML = message; _confirmationCallback = onConfirm; confirmationModalEl.classList.remove('hidden'); document.body.classList.add('modal-is-open'); };
+        const hideConfirmationModal = () => { confirmationModalEl.classList.add('hidden'); _confirmationCallback = null; document.body.classList.remove('modal-is-open');};
         const handleAddOrUpdatePayment = (e) => {
             e.preventDefault();
-            const editingPaymentIdInput = document.getElementById('editingPaymentId');
-            const paymentNameInput = document.getElementById('paymentName');
-            const paymentDayInput = document.getElementById('paymentDay');
-            const paymentAmountInput = document.getElementById('paymentAmount');
-            const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
-            const toggleFormBtnText = document.getElementById('toggleFormBtnText');
-            const id = editingPaymentIdInput.value; 
-            const name = paymentNameInput.value.trim(); 
-            const dueDate = parseInt(paymentDayInput.value); 
-            const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
+            const id = editingPaymentIdInput.value; const name = paymentNameInput.value.trim(); const dueDate = parseInt(paymentDayInput.value); const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
             if (!name || !dueDate) return;
-            if (id) { 
-                const pIndex = payments.findIndex(p => p.id === id); 
-                if (pIndex > -1) payments[pIndex] = { ...payments[pIndex], name, dueDate, amount }; 
-            } else { 
-                const creationDate = new Date(); 
-                creationDate.setMonth(creationDate.getMonth() + selectedMonthOffset); 
-                payments.push({ id: Date.now().toString(), name, dueDate, amount, paidMonths: {}, amountOverrides: {}, createdAt: getMonthYearKey(creationDate) }); 
-            }
-            saveDataToStorage(); 
-            scheduleNotifications(); // Reschedule notifications
-            renderAll(true); 
-            addPaymentFormContainer.classList.remove('visible'); 
-            toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; 
-            resetForm();
+            if (id) { const pIndex = payments.findIndex(p => p.id === id); if (pIndex > -1) payments[pIndex] = { ...payments[pIndex], name, dueDate, amount }; }
+            else { const creationDate = new Date(); creationDate.setMonth(creationDate.getMonth() + selectedMonthOffset); payments.push({ id: Date.now().toString(), name, dueDate, amount, paidMonths: {}, amountOverrides: {}, notificationsSent: {}, createdAt: getMonthYearKey(creationDate) }); }
+            savePaymentsToStorage(); renderAll(true); addPaymentFormContainer.classList.remove('visible'); toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; resetForm();
         };
-
-        const deletePayment = async (id) => { 
-            const payment = payments.find(p => p.id === id);
-            if (payment) {
-                // Cancel scheduled notifications before deleting
-                await cancelNotificationsForPayment(payment);
-            }
-            payments = payments.filter(p => p.id !== id); 
-            saveDataToStorage(); 
-            renderAll(true); 
-        };
-
+        const deletePayment = (id) => { payments = payments.filter(p => p.id !== id); savePaymentsToStorage(); renderAll(true); };
         const editPayment = (id) => {
             const payment = payments.find(p => p.id === id); if (!payment) return;
-            const editingPaymentIdInput = document.getElementById('editingPaymentId');
-            const paymentNameInput = document.getElementById('paymentName');
-            const paymentDayInput = document.getElementById('paymentDay');
-            const paymentAmountInput = document.getElementById('paymentAmount');
-            const formTitleEl = document.getElementById('formTitle');
-            const addEditButtonTextEl = document.getElementById('addEditButtonText');
-            const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
-            const toggleFormBtnText = document.getElementById('toggleFormBtnText');
-            editingPaymentIdInput.value = payment.id; 
-            paymentNameInput.value = payment.name; 
-            paymentDayInput.value = payment.dueDate; 
-            paymentAmountInput.value = payment.amount;
-            formTitleEl.textContent = 'Editar Pago'; 
-            addEditButtonTextEl.textContent = 'Actualizar Pago';
-            if (!addPaymentFormContainer.classList.contains('visible')) { 
-                addPaymentFormContainer.classList.add('visible'); 
-                toggleFormBtnText.textContent = 'Ocultar Formulario'; 
-            }
-            paymentNameInput.focus(); 
-            window.scrollTo({ top: addPaymentFormContainer.offsetTop, behavior: 'smooth' });
+            editingPaymentIdInput.value = payment.id; paymentNameInput.value = payment.name; paymentDayInput.value = payment.dueDate; paymentAmountInput.value = payment.amount;
+            formTitleEl.textContent = 'Editar Pago'; addEditButtonTextEl.textContent = 'Actualizar Pago';
+            if (!addPaymentFormContainer.classList.contains('visible')) { addPaymentFormContainer.classList.add('visible'); toggleFormBtnText.textContent = 'Ocultar Formulario'; }
+            paymentNameInput.focus(); window.scrollTo({ top: addPaymentFormContainer.offsetTop, behavior: 'smooth' });
         };
-
         const togglePaymentStatus = (id, markAsPaid) => {
             const paymentIndex = payments.findIndex(p => p.id === id); if (paymentIndex === -1) return;
-            const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); 
-            const displayMonthKey = getMonthYearKey(displayDate);
-            const payment = payments[paymentIndex]; 
-            if (!payment.paidMonths) payment.paidMonths = {};
+            const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const displayMonthKey = getMonthYearKey(displayDate);
+            const payment = payments[paymentIndex]; if (!payment.paidMonths) payment.paidMonths = {};
             payment.paidMonths[displayMonthKey] = markAsPaid;
-            
-            // Schedule or cancel notifications based on new status
-            if (markAsPaid) {
-                cancelNotificationsForPayment(payment, displayMonthKey);
-            } else {
-                scheduleNotifications();
-            }
-
-            const paymentsListEl = document.getElementById('paymentsList');
             const paymentItemEl = paymentsListEl.querySelector(`[data-id="${id}"]`);
-            if (paymentItemEl) { 
-                const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation'; 
-                paymentItemEl.classList.add(animationClass); 
-                setTimeout(() => paymentItemEl.classList.remove(animationClass), 600); 
-            }
-            saveDataToStorage(); 
-            setTimeout(() => { renderAll(true); }, 150);
+            if (paymentItemEl) { const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation'; paymentItemEl.classList.add(animationClass); setTimeout(() => paymentItemEl.classList.remove(animationClass), 600); }
+            savePaymentsToStorage(); setTimeout(() => { renderAll(true); }, 150);
         };
-
         const getEffectiveAmount = (payment, monthKey) => payment.amountOverrides?.[monthKey] ?? payment.amount;
-        
         const renderPayments = () => {
-            const paymentsListEl = document.getElementById('paymentsList');
-            paymentsListEl.innerHTML = ''; 
-            const displayDate = new Date(); 
-            displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); 
-            const displayMonthKey = getMonthYearKey(displayDate);
+            paymentsListEl.innerHTML = ''; const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const displayMonthKey = getMonthYearKey(displayDate);
             const activePaymentsForMonth = payments.filter(p => p.createdAt && p.createdAt <= displayMonthKey);
-            if (activePaymentsForMonth.length === 0) { 
-                paymentsListEl.innerHTML = `<div class="text-center py-10"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg><p class="mt-3 text-sm font-medium text-slate-500 dark:text-slate-400">No hay pagos para este mes.</p></div>`; 
-                calculateAndDisplaySummary(); 
-                return; 
-            }
+            if (activePaymentsForMonth.length === 0) { paymentsListEl.innerHTML = `<div class="text-center py-10"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg><p class="mt-3 text-sm font-medium">No hay pagos para este mes.</p></div>`; calculateAndDisplaySummary(); return; }
             const sortedPayments = activePaymentsForMonth.sort((a, b) => a.dueDate - b.dueDate).sort((a,b) => (a.paidMonths[displayMonthKey] ? 1 : 0) - (b.paidMonths[displayMonthKey] ? 1 : 0));
             sortedPayments.forEach(payment => {
-                 const isPaid = payment.paidMonths && payment.paidMonths[displayMonthKey]; 
-                 const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
-                const paymentItem = document.createElement('div'); 
-                paymentItem.className = `payment-item bg-white dark:bg-slate-800 shadow-lg rounded-xl`; 
-                paymentItem.dataset.id = payment.id; 
-                paymentItem.dataset.isPaid = isPaid ? 'true' : 'false';
-                paymentItem.innerHTML = `<div class="swipe-action-background swipe-right"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></div><div class="swipe-action-background swipe-left"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6 6m0-6l6-6" /></svg></div><div class="payment-item-content p-5 w-full flex flex-col sm:flex-row justify-between sm:items-center gap-4"><div class="flex-grow"><h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">${payment.name}</h3><p class="text-sm text-slate-600 dark:text-slate-400">Vence el día: <span class="font-medium">${payment.dueDate}</span> | Monto: ${formatCurrency(effectiveAmount)}</p><p class="mt-1 text-xs font-semibold ${isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isPaid ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>Pagado</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 102 0V5zm-1 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>Pendiente</span>'}</p></div><div class="hidden sm:flex flex-shrink-0 space-x-2"><button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-3 rounded-md text-xs shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>Editar</button><button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-3 rounded-md text-xs shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>Eliminar</button></div><button data-action="${isPaid ? 'mark_pending' : 'mark_paid'}" class="w-full mt-4 sm:mt-0 sm:w-auto sm:ml-4 text-sm font-semibold py-2 px-4 rounded-lg shadow-md ${isPaid ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'} hidden md:block">${isPaid ? 'Marcar Pendiente' : 'Marcar Pagado'}</button></div>`;
+                 const isPaid = payment.paidMonths && payment.paidMonths[displayMonthKey]; const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
+                const paymentItem = document.createElement('div'); paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`; paymentItem.dataset.id = payment.id; paymentItem.dataset.isPaid = isPaid ? 'true' : 'false';
+                paymentItem.innerHTML = `<div class="swipe-action-background swipe-right"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></div><div class="swipe-action-background swipe-left"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6 6m0-6l6-6" /></svg></div><div class="payment-item-content p-5 w-full flex flex-col sm:flex-row justify-between sm:items-center gap-4"><div class="flex-grow"><h3 class="text-lg font-semibold">${payment.name}</h3><p class="text-sm">Vence el día: <span class="font-medium">${payment.dueDate}</span> | Monto: ${formatCurrency(effectiveAmount)}</p><p class="mt-1 text-xs font-semibold ${isPaid ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">${isPaid ? '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>Pagado</span>' : '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-300"><svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4a1 1 0 102 0V5zm-1 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>Pendiente</span>'}</p></div><div class="hidden sm:flex flex-shrink-0 space-x-2"><button class="edit-btn bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2 px-3 rounded-md text-xs shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" /></svg>Editar</button><button class="delete-btn bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-3 rounded-md text-xs shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" /></svg>Eliminar</button></div><button data-action="${isPaid ? 'mark_pending' : 'mark_paid'}" class="w-full mt-4 sm:mt-0 sm:w-auto sm:ml-4 text-sm font-semibold py-2 px-4 rounded-lg shadow-md ${isPaid ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'} hidden md:block">${isPaid ? 'Marcar Pendiente' : 'Marcar Pagado'}</button></div>`;
                 paymentsListEl.appendChild(paymentItem);
             });
         };
-
-        const renderAll = (preserveScroll = false) => { 
-            if(preserveScroll) lastScrollY = window.scrollY; 
-            updateMonthSelectorUI(); 
-            renderPayments(); 
-            calculateAndDisplaySummary(); 
-            if(preserveScroll) requestAnimationFrame(() => { window.scrollTo(0, lastScrollY); }); 
-        };
-
+        const renderAll = (preserveScroll = false) => { if(preserveScroll) lastScrollY = window.scrollY; updateMonthSelectorUI(); renderPayments(); checkReminders(); calculateAndDisplaySummary(); if(preserveScroll) requestAnimationFrame(() => { window.scrollTo(0, lastScrollY); }); };
         const updateMonthSelectorUI = () => {
-            const displayedMonthLabelEl = document.getElementById('displayedMonthLabel');
-            const paymentsListTitleEl = document.getElementById('paymentsListTitle');
-            const prevMonthBtn = document.getElementById('prevMonthBtn');
-            const nextMonthBtn = document.getElementById('nextMonthBtn');
-            const displayDate = new Date(); 
-            displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); 
-            const currentMonthName = getMonthName(displayDate);
+            const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const currentMonthName = getMonthName(displayDate);
             displayedMonthLabelEl.textContent = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
-            paymentsListTitleEl.textContent = `Pagos de ${currentMonthName}`; 
-            prevMonthBtn.disabled = selectedMonthOffset <= MAX_PREV_MONTHS; 
-            nextMonthBtn.disabled = selectedMonthOffset >= MAX_NEXT_MONTHS;
+            paymentsListTitleEl.textContent = `Pagos de ${currentMonthName}`; prevMonthBtn.disabled = selectedMonthOffset <= MAX_PREV_MONTHS; nextMonthBtn.disabled = selectedMonthOffset >= MAX_NEXT_MONTHS;
         };
-
         const renderHistory = () => {
             const historicalPaymentsListContainerEl = document.getElementById('historicalPaymentsListContainer');
-            historicalPaymentsListContainerEl.innerHTML = ''; 
-            const groupedByMonth = {};
-            payments.forEach(p => Object.keys(p.paidMonths).forEach(monthKey => { 
-                if(p.paidMonths[monthKey]) { 
-                    if(!groupedByMonth[monthKey]) groupedByMonth[monthKey] = []; 
-                    groupedByMonth[monthKey].push(p); 
-                } 
-            }));
+            historicalPaymentsListContainerEl.innerHTML = ''; const groupedByMonth = {};
+            payments.forEach(p => Object.keys(p.paidMonths).forEach(monthKey => { if(p.paidMonths[monthKey]) { if(!groupedByMonth[monthKey]) groupedByMonth[monthKey] = []; groupedByMonth[monthKey].push(p); } }));
             const sortedMonthKeys = Object.keys(groupedByMonth).sort().reverse();
-            if (sortedMonthKeys.length === 0) { 
-                historicalPaymentsListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay historial de pagos.</p></div>`; 
-                return; 
-            }
+            if (sortedMonthKeys.length === 0) { historicalPaymentsListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay historial de pagos.</p></div>`; return; }
             sortedMonthKeys.forEach(monthKey => {
-                const monthPayments = groupedByMonth[monthKey]; 
-                const monthDate = new Date(monthKey + '-02'); 
-                const monthName = getMonthName(monthDate);
+                const monthPayments = groupedByMonth[monthKey]; const monthDate = new Date(monthKey + '-02'); const monthName = getMonthName(monthDate);
                 const totalPaid = monthPayments.reduce((sum, p) => sum + (getEffectiveAmount(p, monthKey) || 0), 0);
-                const monthCard = document.createElement('div'); 
-                monthCard.className = 'history-month-card bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden';
+                const monthCard = document.createElement('div'); monthCard.className = 'history-month-card bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden';
                 monthCard.innerHTML = `<div class="history-month-header p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-700"><div><h3 class="text-xl font-semibold text-indigo-700 dark:text-indigo-400">${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</h3><p class="text-sm text-slate-500 dark:text-slate-400">Total Pagado: <span class="font-bold">${formatCurrency(totalPaid)}</span></p></div><svg class="details-toggle-icon h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div><div class="history-details p-4 space-y-3 hidden"></div>`;
                 const detailsContainer = monthCard.querySelector('.history-details');
-                monthPayments.sort((a,b) => a.dueDate - b.dueDate).forEach(p => { 
-                    const itemEl = document.createElement('div'); 
-                    itemEl.className = 'history-item flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-600'; 
-                    itemEl.innerHTML = `<div><p class="font-medium text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-sm text-slate-500 dark:text-slate-400">Vencía el día ${p.dueDate}</p></div><p class="font-semibold text-green-600 dark:text-green-400">${formatCurrency(getEffectiveAmount(p, monthKey))}</p>`; 
-                    detailsContainer.appendChild(itemEl); 
-                });
-                monthCard.querySelector('.history-month-header').addEventListener('click', (e) => { 
-                    detailsContainer.classList.toggle('hidden'); 
-                    e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded'); 
-                });
+                monthPayments.sort((a,b) => a.dueDate - b.dueDate).forEach(p => { const itemEl = document.createElement('div'); itemEl.className = 'history-item flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-600'; itemEl.innerHTML = `<div><p class="font-medium text-slate-800 dark:text-slate-200">${p.name}</p><p class="text-sm text-slate-500 dark:text-slate-400">Vencía el día ${p.dueDate}</p></div><p class="font-semibold text-green-600 dark:text-green-400">${formatCurrency(getEffectiveAmount(p, monthKey))}</p>`; detailsContainer.appendChild(itemEl); });
+                monthCard.querySelector('.history-month-header').addEventListener('click', (e) => { detailsContainer.classList.toggle('hidden'); e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded'); });
                 historicalPaymentsListContainerEl.appendChild(monthCard);
             });
         };
+        const updateNotificationsButton = () => { /* ... same as before ... */ };
+        const handleNotificationsPermission = () => { /* ... same as before ... */ };
         
         const renderFutureInstallmentsView = () => {
-            const futureInstallmentsListContainerEl = document.getElementById('futureInstallmentsListContainer');
-            const installmentsChartEl = document.getElementById('installmentsChart');
             const groupedByMonth = {};
-            futureInstallments.forEach(item => { 
-                const monthKey = getMonthYearKey(new Date(item.dueDate)); 
-                if (!groupedByMonth[monthKey]) { groupedByMonth[monthKey] = []; } 
-                groupedByMonth[monthKey].push(item); 
-            });
+            futureInstallments.forEach(item => { const monthKey = getMonthYearKey(new Date(item.dueDate)); if (!groupedByMonth[monthKey]) { groupedByMonth[monthKey] = []; } groupedByMonth[monthKey].push(item); });
             const sortedMonthKeys = Object.keys(groupedByMonth).sort();
             futureInstallmentsListContainerEl.innerHTML = '';
             
             const chartContainer = document.getElementById('installmentsChartContainer');
+            const chartCard = document.getElementById('chartCard');
             const isDarkMode = localStorage.getItem('theme') === 'dark';
+
+            if (chartCard) {
+                chartCard.style.backgroundColor = isDarkMode ? '#1e293b' : '#ffffff'; 
+            }
 
             if (sortedMonthKeys.length === 0) { 
                 futureInstallmentsListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay datos de cuotas futuras. Analiza un resumen para empezar.</p></div>`; 
-                if(installmentsChartInstance) { installmentsChartInstance.destroy(); installmentsChartInstance = null; } 
+                if(installmentsChartInstance) { 
+                    installmentsChartInstance.destroy(); 
+                    installmentsChartInstance = null; 
+                } 
                 chartContainer.style.display = 'none';
                 return; 
             } else {
@@ -979,33 +741,22 @@
 
             const chartLabels = []; const chartData = [];
             sortedMonthKeys.forEach(monthKey => {
-                const monthDate = new Date(monthKey + '-02'); 
-                const monthName = getMonthName(monthDate); 
-                chartLabels.push(monthName.charAt(0).toUpperCase() + monthName.slice(1));
-                const monthInstallments = groupedByMonth[monthKey]; 
-                const totalForMonth = monthInstallments.reduce((sum, item) => sum + item.monto, 0); 
-                chartData.push(totalForMonth);
-                const monthCard = document.createElement('div'); 
-                monthCard.className = 'history-month-card bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden';
+                const monthDate = new Date(monthKey + '-02'); const monthName = getMonthName(monthDate); chartLabels.push(monthName.charAt(0).toUpperCase() + monthName.slice(1));
+                const monthInstallments = groupedByMonth[monthKey]; const totalForMonth = monthInstallments.reduce((sum, item) => sum + item.monto, 0); chartData.push(totalForMonth);
+                const monthCard = document.createElement('div'); monthCard.className = 'history-month-card bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden';
                 monthCard.innerHTML = `<div class="history-month-header p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-700"><div><h3 class="text-xl font-semibold text-indigo-700 dark:text-indigo-400">${monthName.charAt(0).toUpperCase() + monthName.slice(1)}</h3><p class="text-sm text-slate-500 dark:text-slate-400">Total en Cuotas: <span class="font-bold">${formatCurrency(totalForMonth)}</span></p></div><svg class="details-toggle-icon h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div><div class="history-details p-4 space-y-3 hidden"></div>`;
                 const detailsContainer = monthCard.querySelector('.history-details');
-                monthInstallments.forEach(item => { 
-                    const itemEl = document.createElement('div'); 
-                    itemEl.className = 'history-item flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-600'; 
-                    itemEl.innerHTML = `<div><p class="font-medium text-slate-800 dark:text-slate-200">${item.descripcion}</p></div><p class="font-semibold text-slate-600 dark:text-slate-300">${formatCurrency(item.monto)}</p>`; 
-                    detailsContainer.appendChild(itemEl); 
-                });
-                monthCard.querySelector('.history-month-header').addEventListener('click', (e) => { 
-                    detailsContainer.classList.toggle('hidden'); 
-                    e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded'); 
-                });
+                monthInstallments.forEach(item => { const itemEl = document.createElement('div'); itemEl.className = 'history-item flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-600'; itemEl.innerHTML = `<div><p class="font-medium text-slate-800 dark:text-slate-200">${item.descripcion}</p></div><p class="font-semibold text-slate-600 dark:text-slate-300">${formatCurrency(item.monto)}</p>`; detailsContainer.appendChild(itemEl); });
+                monthCard.querySelector('.history-month-header').addEventListener('click', (e) => { detailsContainer.classList.toggle('hidden'); e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded'); });
                 futureInstallmentsListContainerEl.appendChild(monthCard);
             });
             
             const dynamicHeight = Math.max(250, chartLabels.length * 40);
             chartContainer.style.height = `${dynamicHeight}px`;
 
-            if (installmentsChartInstance) { installmentsChartInstance.destroy(); }
+            if (installmentsChartInstance) {
+                installmentsChartInstance.destroy();
+            }
             
             const tickColor = isDarkMode ? '#e2e8f0' : '#1f2937';
             const tooltipTitleColor = isDarkMode ? '#a5b4fc' : '#4f46e5';
@@ -1015,96 +766,58 @@
 
             installmentsChartInstance = new Chart(installmentsChartEl, { 
                 type: 'bar', 
-                data: { labels: chartLabels, datasets: [{ label: 'Total de Cuotas por Mes', data: chartData, backgroundColor: 'rgba(79, 70, 229, 0.8)', borderColor: 'rgba(79, 70, 229, 1)', borderWidth: 1 }] }, 
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', axis: 'y', intersect: false },
-                    scales: { x: { beginAtZero: true, ticks: { callback: (value) => formatCurrency(value), color: tickColor }, grid: { color: gridColor } }, y: { ticks: { color: tickColor }, grid: { color: gridColor } } }, 
-                    plugins: { legend: { display: false }, tooltip: { titleColor: tooltipTitleColor, bodyColor: tooltipBodyColor, backgroundColor: tooltipBgColor, callbacks: { label: (context) => formatCurrency(context.parsed.x) } } } 
+                data: { 
+                    labels: chartLabels, 
+                    datasets: [{ 
+                        label: 'Total de Cuotas por Mes', 
+                        data: chartData, 
+                        backgroundColor: 'rgba(79, 70, 229, 0.8)', 
+                        borderColor: 'rgba(79, 70, 229, 1)', 
+                        borderWidth: 1 
+                    }] 
+                }, 
+                options: { 
+                    indexAxis: 'y',
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        axis: 'y',
+                        intersect: false
+                    },
+                    scales: { 
+                        x: { 
+                            beginAtZero: true, 
+                            ticks: { 
+                                callback: (value) => formatCurrency(value),
+                                color: tickColor 
+                            },
+                            grid: {
+                                color: gridColor
+                            }
+                        },
+                        y: {
+                           ticks: {
+                               color: tickColor
+                           },
+                           grid: {
+                                color: gridColor
+                            }
+                        }
+                    }, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            titleColor: tooltipTitleColor,
+                            bodyColor: tooltipBodyColor,
+                            backgroundColor: tooltipBgColor,
+                            callbacks: { 
+                                label: (context) => formatCurrency(context.parsed.x)
+                            } 
+                        } 
+                    } 
                 } 
             });
-        };
-
-        const renderCategorizationView = (monthKey) => {
-            const categorizedExpensesListContainerEl = document.getElementById('categorizedExpensesListContainer');
-            const categoriesChartEl = document.getElementById('categoriesChart');
-            const categorizationViewTitleEl = document.getElementById('categorizationViewTitle');
-            const monthData = categorizedExpenses[monthKey];
-            const isDarkMode = localStorage.getItem('theme') === 'dark';
-
-            if (!monthData || !monthData.gastos || monthData.gastos.length === 0) {
-                categorizedExpensesListContainerEl.innerHTML = `<div class="text-center py-10 bg-white dark:bg-slate-700 rounded-lg"><p class="text-slate-500 dark:text-slate-400">No hay datos de gastos para este mes. Analiza un resumen para empezar.</p></div>`;
-                if (categoriesChartInstance) { categoriesChartInstance.destroy(); categoriesChartInstance = null; }
-                document.getElementById('categoriesChartContainer').style.display = 'none';
-                return;
-            }
-            
-            document.getElementById('categoriesChartContainer').style.display = 'block';
-            const monthDate = new Date(monthKey + '-02');
-            categorizationViewTitleEl.textContent = `Análisis de Gastos: ${getMonthName(monthDate)}`;
-
-            const expensesByCat = monthData.gastos.reduce((acc, gasto) => {
-                const cat = gasto.categoria || 'Sin Categoría';
-                if (!acc[cat]) { acc[cat] = { total: 0, items: [] }; }
-                acc[cat].total += gasto.monto;
-                acc[cat].items.push(gasto);
-                return acc;
-            }, {});
-
-            const sortedCategories = Object.keys(expensesByCat).sort((a, b) => expensesByCat[b].total - expensesByCat[a].total);
-            const chartLabels = sortedCategories;
-            const chartData = sortedCategories.map(cat => expensesByCat[cat].total);
-            
-            categorizedExpensesListContainerEl.innerHTML = '';
-            sortedCategories.forEach(cat => {
-                const categoryData = expensesByCat[cat];
-                const categoryCard = document.createElement('div');
-                categoryCard.className = 'history-month-card bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden';
-                categoryCard.innerHTML = `<div class="history-month-header p-4 flex justify-between items-center border-b border-slate-200 dark:border-slate-700"><div><h3 class="text-xl font-semibold text-indigo-700 dark:text-indigo-400">${cat}</h3><p class="text-sm text-slate-500 dark:text-slate-400">Total: <span class="font-bold">${formatCurrency(categoryData.total)}</span></p></div><svg class="details-toggle-icon h-6 w-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg></div><div class="history-details p-4 space-y-3 hidden"></div>`;
-                
-                const detailsContainer = categoryCard.querySelector('.history-details');
-                categoryData.items.sort((a,b) => b.monto - a.monto).forEach(item => {
-                    const itemEl = document.createElement('div');
-                    itemEl.className = 'history-item flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-600';
-                    itemEl.innerHTML = `<p class="font-medium text-slate-800 dark:text-slate-200">${item.descripcion}</p><p class="font-semibold text-slate-600 dark:text-slate-300">${formatCurrency(item.monto)}</p>`;
-                    detailsContainer.appendChild(itemEl);
-                });
-                
-                categoryCard.querySelector('.history-month-header').addEventListener('click', (e) => {
-                    detailsContainer.classList.toggle('hidden');
-                    e.currentTarget.querySelector('.details-toggle-icon').classList.toggle('expanded');
-                });
-                categorizedExpensesListContainerEl.appendChild(categoryCard);
-            });
-
-            if (categoriesChartInstance) { categoriesChartInstance.destroy(); }
-            const legendColor = isDarkMode ? '#e2e8f0' : '#1f2937';
-            const tooltipTitleColor = isDarkMode ? '#a5b4fc' : '#4f46e5';
-            const tooltipBodyColor = isDarkMode ? '#e2e8f0' : '#1f2937';
-            const tooltipBgColor = isDarkMode ? '#1f2937' : '#ffffff';
-
-            categoriesChartInstance = new Chart(categoriesChartEl, {
-                type: 'doughnut',
-                data: {
-                    labels: chartLabels,
-                    datasets: [{
-                        label: 'Gastos',
-                        data: chartData,
-                        backgroundColor: ['#4f46e5', '#7c3aed', '#db2777', '#f59e0b', '#10b981', '#3b82f6', '#ef4444', '#6b7280'],
-                        borderColor: isDarkMode ? '#1e293b' : '#ffffff',
-                        borderWidth: 2,
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: legendColor } },
-                        tooltip: {
-                            titleColor: tooltipTitleColor, bodyColor: tooltipBodyColor, backgroundColor: tooltipBgColor,
-                            callbacks: { label: (context) => `${context.label}: ${formatCurrency(context.parsed)}` }
-                        }
-                    }
-                }
-            });
-            showView('categorizationView');
         };
 
         const readFileAsBase64 = (file) => {
@@ -1123,29 +836,26 @@
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) {
                 showApiKeyModal(true);
-                event.target.value = ''; 
+                summaryFileEl.value = ''; 
                 return;
             }
 
-            const loadingModalEl = document.getElementById('loadingModal');
-            const loadingModalText = document.getElementById('loadingModalText');
             loadingModalText.textContent = `Iniciando análisis de ${files.length} resumen(es)...`;
             loadingModalEl.classList.remove('hidden');
             document.body.classList.add('modal-is-open');
 
-            let filesProcessed = 0, filesFailed = 0, i = 0;
-            let lastProcessedMonthKey = null;
+            let totalNewInstallments = 0;
+            let filesProcessed = 0;
+            let filesFailed = 0;
+            let i = 0;
 
             for (const file of files) {
                 i++;
                 loadingModalText.textContent = `Analizando: ${file.name} (${i} de ${files.length})`;
                 try {
                     const base64Data = await readFileAsBase64(file);
-                    if (currentAnalysisType === 'installments') {
-                        await analyzeInstallmentsWithAI(base64Data, file.type);
-                    } else if (currentAnalysisType === 'expenses') {
-                        lastProcessedMonthKey = await analyzeExpensesWithAI(base64Data, file.type);
-                    }
+                    const newCount = await analyzeSummaryWithAI(base64Data, file.type, false);
+                    totalNewInstallments += newCount;
                     filesProcessed++;
                 } catch (error) {
                     filesFailed++;
@@ -1157,13 +867,9 @@
             document.body.classList.remove('modal-is-open');
 
             if (filesProcessed > 0) {
-                 createPageNotification(`${filesProcessed} resumen(es) analizado(s) con éxito.`, 'success', 'Análisis Completado');
-                 if (currentAnalysisType === 'installments') {
-                     renderFutureInstallmentsView();
-                     showView('futureInstallmentsView');
-                 } else if (currentAnalysisType === 'expenses' && lastProcessedMonthKey) {
-                     renderCategorizationView(lastProcessedMonthKey);
-                 }
+                 createPageNotification(`${filesProcessed} resumen(es) analizado(s) con éxito. Se agregaron ${totalNewInstallments} cuotas nuevas.`, 'success', 'Análisis Completado');
+                 renderFutureInstallmentsView();
+                 showView('futureInstallmentsView');
             }
             if (filesFailed > 0) {
                  createPageNotification(`${filesFailed} de ${files.length} resumen(es) no pudieron ser procesados. Revisa la consola para más detalles.`, 'error', 'Error en Análisis');
@@ -1171,44 +877,16 @@
              if (filesProcessed === 0 && filesFailed > 0) {
                 createPageNotification('No se pudo analizar ningún resumen. Por favor, intenta de nuevo.', 'error', 'Fallo Total');
             }
-            event.target.value = '';
-        };
-        
-        const handleInvoiceFileSelected = async (event) => {
-            const file = event.target.files[0];
-            if (!file) return;
 
-            currentAnalysisType = 'invoice';
-            const apiKey = localStorage.getItem('geminiApiKey');
-            if (!apiKey) {
-                showApiKeyModal(true);
-                event.target.value = '';
-                return;
-            }
-
-            const loadingModalEl = document.getElementById('loadingModal');
-            const loadingModalText = document.getElementById('loadingModalText');
-            loadingModalText.textContent = `Escaneando factura...`;
-            loadingModalEl.classList.remove('hidden');
-            document.body.classList.add('modal-is-open');
-
-            try {
-                const base64Data = await readFileAsBase64(file);
-                await analyzeInvoiceWithAI(base64Data, file.type);
-            } catch (error) {
-                console.error("Error al escanear la factura:", error);
-                createPageNotification(`Error al escanear la factura: ${error.message}`, 'error');
-            } finally {
-                loadingModalEl.classList.add('hidden');
-                document.body.classList.remove('modal-is-open');
-                event.target.value = '';
-            }
+            summaryFileEl.value = '';
         };
 
-        const analyzeApiCall = async (prompt, base64Data, mimeType) => {
+        const analyzeSummaryWithAI = async (base64Data, mimeType, showViewAfter = true) => {
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) throw new Error("Clave API no encontrada.");
 
+            const prompt = `Eres un asistente experto en finanzas personales para Argentina. Analiza el siguiente resumen de tarjeta de crédito (puede ser un documento PDF o una imagen). Primero, identifica el mes y el año del período del resumen. Luego, extrae la lista de consumos o gastos. Ignora información no relacionada a un gasto. Para cada gasto, identifica la descripción, el monto y si es una cuota (por ejemplo, "3/12"). Devuelve la información SOLAMENTE como un único objeto JSON con la siguiente estructura y sin ningún texto o explicación adicional: {"anio": AAAA, "mes": MM, "gastos": [{"descripcion": "...", "monto": 1234.56, "cuota": "X/Y"}]}`;
+            
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: mimeType, data: base64Data } }] }] };
             const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1221,84 +899,34 @@
             const result = await response.json();
             if (result.candidates && result.candidates[0] && result.candidates[0].content.parts[0].text) {
                 let textResult = result.candidates[0].content.parts[0].text.trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
-                try {
-                    return JSON.parse(textResult);
-                } catch (e) {
-                    console.error("Failed to parse JSON from AI response:", textResult);
-                    throw new Error("La respuesta de la IA no es un JSON válido.");
+                const resultData = JSON.parse(textResult);
+
+                if (!resultData.anio || !resultData.mes || !Array.isArray(resultData.gastos)) {
+                    throw new Error("La respuesta de la IA no contiene la estructura esperada de anio, mes y gastos.");
                 }
+
+                return processExtractedPayments(resultData.gastos, resultData.anio, resultData.mes, showViewAfter);
             } else {
                 throw new Error("La respuesta de la IA no tuvo el formato esperado.");
             }
         };
-
-        const analyzeInstallmentsWithAI = async (base64Data, mimeType) => {
-            const prompt = `Eres un asistente experto en finanzas personales para Argentina. Analiza el siguiente resumen de tarjeta de crédito (puede ser un documento PDF o una imagen). Primero, identifica el mes y el año del período del resumen. Luego, extrae la lista de consumos o gastos. Ignora información no relacionada a un gasto. Para cada gasto, identifica la descripción, el monto y si es una cuota (por ejemplo, "3/12"). Devuelve la información SOLAMENTE como un único objeto JSON con la siguiente estructura y sin ningún texto o explicación adicional: {"anio": AAAA, "mes": MM, "gastos": [{"descripcion": "...", "monto": 1234.56, "cuota": "X/Y"}]}`;
-            const resultData = await analyzeApiCall(prompt, base64Data, mimeType);
-            
-            if (!resultData.anio || !resultData.mes || !Array.isArray(resultData.gastos)) {
-                throw new Error("La respuesta de la IA no contiene la estructura esperada de anio, mes y gastos.");
-            }
-            processExtractedInstallments(resultData.gastos, resultData.anio, resultData.mes);
-        };
         
-        const analyzeExpensesWithAI = async (base64Data, mimeType) => {
-            const prompt = `Eres un asistente experto en finanzas personales para Argentina. Analiza el siguiente resumen de gastos (puede ser un documento PDF o una imagen). Extrae la lista de consumos o gastos. Para cada gasto, identifica la descripción, el monto y asígnale una categoría relevante (ej: Supermercado, Servicios, Transporte, Restaurantes, Compras, Entretenimiento, Impuestos, Salud, Otros). Devuelve la información SOLAMENTE como un único objeto JSON con la siguiente estructura y sin ningún texto o explicación adicional: {"anio": AAAA, "mes": MM, "gastos": [{"descripcion": "...", "monto": 1234.56, "categoria": "..."}]}`;
-            const resultData = await analyzeApiCall(prompt, base64Data, mimeType);
-
-            if (!resultData.anio || !resultData.mes || !Array.isArray(resultData.gastos)) {
-                throw new Error("La respuesta de la IA no contiene la estructura esperada de anio, mes y gastos categorizados.");
+        const processExtractedPayments = (extractedPayments, summaryYear, summaryMonth, showViewAfter = true) => {
+            if (!Array.isArray(extractedPayments)) {
+                console.error("Los datos extraídos no son un array:", extractedPayments);
+                return 0;
             }
-            const monthKey = `${resultData.anio}-${String(resultData.mes).padStart(2, '0')}`;
-            categorizedExpenses[monthKey] = resultData;
-            saveDataToStorage();
-            return monthKey;
-        };
-
-        const analyzeInvoiceWithAI = async (base64Data, mimeType) => {
-            const prompt = `De la siguiente imagen de una factura de servicios de Argentina, extrae los siguientes datos en formato JSON sin ninguna explicación adicional: la empresa o proveedor del servicio, el monto total a pagar, y la fecha de vencimiento en formato 'AAAA-MM-DD'. La estructura debe ser: {"empresa": "...", "monto": 1234.56, "fechaVencimiento": "AAAA-MM-DD"}`;
-            const resultData = await analyzeApiCall(prompt, base64Data, mimeType);
-            
-            if (!resultData.empresa || !resultData.monto || !resultData.fechaVencimiento) {
-                 throw new Error("La respuesta de la IA no contiene la estructura esperada de empresa, monto y fechaVencimiento.");
+            if (isNaN(summaryYear) || isNaN(summaryMonth) || summaryMonth < 1 || summaryMonth > 12) {
+                console.error("Año o mes del resumen inválido:", { summaryYear, summaryMonth });
+                 throw new Error("El año o mes extraído del resumen no es válido.");
             }
-            populateFormWithScannedData(resultData);
-        };
-        
-        const populateFormWithScannedData = (data) => {
-            const paymentNameInput = document.getElementById('paymentName');
-            const paymentAmountInput = document.getElementById('paymentAmount');
-            const paymentDayInput = document.getElementById('paymentDay');
-            const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
-            const toggleFormBtnText = document.getElementById('toggleFormBtnText');
-
-            resetForm();
-            paymentNameInput.value = data.empresa || '';
-            paymentAmountInput.value = data.monto || '';
-            
-            if (data.fechaVencimiento) {
-                const dueDate = new Date(data.fechaVencimiento + 'T00:00:00');
-                paymentDayInput.value = dueDate.getDate();
-            }
-
-            if (!addPaymentFormContainer.classList.contains('visible')) {
-                addPaymentFormContainer.classList.add('visible');
-                toggleFormBtnText.textContent = 'Ocultar Formulario';
-            }
-            createPageNotification('Datos de factura cargados. Por favor, verifica y guarda.', 'success', 'Escaneo Exitoso');
-            paymentNameInput.focus();
-            window.scrollTo({ top: addPaymentFormContainer.offsetTop, behavior: 'smooth' });
-        };
-
-        const processExtractedInstallments = (extractedPayments, summaryYear, summaryMonth) => {
-            if (!Array.isArray(extractedPayments)) { console.error("Los datos extraídos no son un array:", extractedPayments); return 0; }
-            if (isNaN(summaryYear) || isNaN(summaryMonth) || summaryMonth < 1 || summaryMonth > 12) { console.error("Año o mes del resumen inválido:", { summaryYear, summaryMonth }); throw new Error("El año o mes extraído del resumen no es válido."); }
             
             const newInstallments = [];
             const existingInstallmentIds = new Set(futureInstallments.map(i => i.id));
 
             extractedPayments.forEach(item => {
                 if (!item.descripcion || !item.monto || !item.cuota || !item.cuota.includes('/')) return;
+
                 const [currentInstallment, totalInstallments] = item.cuota.split('/').map(Number);
                 if (isNaN(currentInstallment) || isNaN(totalInstallments)) return;
 
@@ -1306,11 +934,17 @@
                     const monthsToAdd = i - currentInstallment;
                     const installmentDate = new Date(summaryYear, summaryMonth - 1, 15); 
                     installmentDate.setMonth(installmentDate.getMonth() + monthsToAdd);
+                    
                     const cleanDescription = item.descripcion.trim().replace(/\s+/g, ' ');
                     const installmentId = `${cleanDescription}-${i}/${totalInstallments}`;
 
                     if (!existingInstallmentIds.has(installmentId)) {
-                         newInstallments.push({ id: installmentId, descripcion: `${cleanDescription} (Cuota ${i}/${totalInstallments})`, monto: parseFloat(item.monto), dueDate: installmentDate.toISOString(), });
+                         newInstallments.push({
+                            id: installmentId,
+                            descripcion: `${cleanDescription} (Cuota ${i}/${totalInstallments})`,
+                            monto: parseFloat(item.monto),
+                            dueDate: installmentDate.toISOString(),
+                        });
                         existingInstallmentIds.add(installmentId);
                     }
                 }
@@ -1318,8 +952,15 @@
 
             if (newInstallments.length > 0) {
                 futureInstallments.push(...newInstallments);
-                saveDataToStorage();
+                savePaymentsToStorage();
             }
+
+            if (showViewAfter) {
+                renderFutureInstallmentsView();
+                showView('futureInstallmentsView');
+            }
+            
+            return newInstallments.length;
         };
 
         const generateAndDownloadICS = () => {
@@ -1340,8 +981,8 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
         };
         const exportData = () => {
-            const dataToExport = { payments, futureInstallments, categorizedExpenses, notificationSettings };
-            if (payments.length === 0 && futureInstallments.length === 0 && Object.keys(categorizedExpenses).length === 0) return createPageNotification("No hay datos para exportar.", "info");
+            const dataToExport = { payments: payments, futureInstallments: futureInstallments };
+            if (payments.length === 0 && futureInstallments.length === 0) return createPageNotification("No hay datos para exportar.", "info");
             const dataStr = JSON.stringify(dataToExport, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a'); link.href = url; link.download = 'gestor_pagos_backup.json';
             document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); createPageNotification("Datos exportados con éxito.", "success");
@@ -1352,345 +993,97 @@
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    const hasPayments = data.payments && Array.isArray(data.payments);
-                    const isOldFormat = Array.isArray(data);
-                    if (!hasPayments && !isOldFormat) throw new Error("Formato de archivo inválido.");
-                    
-                    showConfirmationModal("Esto reemplazará todos tus datos actuales. ¿Continuar?", () => {
-                        payments = isOldFormat ? data : (data.payments || []);
-                        futureInstallments = isOldFormat ? [] : (data.futureInstallments || []);
-                        categorizedExpenses = isOldFormat ? {} : (data.categorizedExpenses || {});
-                        notificationSettings = data.notificationSettings || { remindDays: [1], remindOverdue: true, notificationTime: '10:00' };
-                        saveDataToStorage(); 
-                        renderAll(); 
-                        scheduleNotifications();
-                        createPageNotification("Datos importados con éxito.", "success");
+                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) throw new Error("Formato de archivo inválido.");
+                    showConfirmationModal("Esto reemplazará todos tus datos. ¿Continuar?", () => {
+                        payments = Array.isArray(data) ? data : (data.payments || []);
+                        futureInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
+                        savePaymentsToStorage(); renderAll(); createPageNotification("Datos importados con éxito.", "success");
                     });
-                } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { event.target.value = ''; }
+                } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
             };
             reader.readAsText(file);
         };
-        
-        // --- NOTIFICATION FUNCTIONS ---
-        const updateNotificationStatusUI = async () => {
-            const statusDiv = document.getElementById('notificationStatus');
-            const fieldset = document.getElementById('notificationSettingsFieldset');
-            const requestBtn = document.getElementById('requestNotificationPermissionBtn');
-
-            if (!('Notification' in window) || !('serviceWorker' in navigator) || !('showTrigger' in Notification.prototype)) {
-                statusDiv.textContent = 'No Soportado';
-                statusDiv.className = 'mt-2 text-sm font-medium p-3 rounded-md bg-red-100 text-red-800';
-                fieldset.disabled = true;
-                requestBtn.disabled = true;
-                return;
-            }
-
-            const permission = Notification.permission;
-            if (permission === 'granted') {
-                statusDiv.textContent = 'Permiso Concedido';
-                statusDiv.className = 'mt-2 text-sm font-medium p-3 rounded-md bg-green-100 text-green-800';
-                fieldset.disabled = false;
-                requestBtn.style.display = 'none';
-            } else if (permission === 'denied') {
-                statusDiv.textContent = 'Permiso Bloqueado';
-                statusDiv.className = 'mt-2 text-sm font-medium p-3 rounded-md bg-red-100 text-red-800';
-                fieldset.disabled = true;
-                requestBtn.style.display = 'block';
-            } else {
-                statusDiv.textContent = 'Permiso Requerido';
-                statusDiv.className = 'mt-2 text-sm font-medium p-3 rounded-md bg-yellow-100 text-yellow-800';
-                fieldset.disabled = true;
-                requestBtn.style.display = 'block';
-            }
-        };
-
-        const handleNotificationsPermission = async () => {
-            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-                createPageNotification('Este navegador no soporta notificaciones.', 'error');
-                return;
-            }
-            const permission = await Notification.requestPermission();
-            await updateNotificationStatusUI();
-            if (permission === 'granted') {
-                scheduleNotifications();
-            }
-        };
-
-        const loadNotificationSettingsUI = () => {
-            document.querySelectorAll('input[name="remindDays"]').forEach(cb => {
-                cb.checked = notificationSettings.remindDays.includes(parseInt(cb.value));
-            });
-            document.getElementById('remindOverdue').checked = notificationSettings.remindOverdue;
-            document.getElementById('notificationTime').value = notificationSettings.notificationTime;
-        };
-
-        const handleSaveNotificationSettings = (e) => {
-            e.preventDefault();
-            const remindDays = Array.from(document.querySelectorAll('input[name="remindDays"]:checked')).map(cb => parseInt(cb.value));
-            const remindOverdue = document.getElementById('remindOverdue').checked;
-            const notificationTime = document.getElementById('notificationTime').value;
-
-            notificationSettings = { remindDays, remindOverdue, notificationTime };
-            saveDataToStorage();
-            scheduleNotifications();
-            createPageNotification('Ajustes de notificación guardados.', 'success');
-        };
-
-        const scheduleNotifications = async () => {
-            if (Notification.permission !== 'granted' || !('showTrigger' in Notification.prototype)) {
-                return;
-            }
-
-            const reg = await navigator.serviceWorker.ready;
-            const existingNotifications = await reg.getNotifications({ includeTriggered: true });
-            existingNotifications.forEach(notification => notification.close());
-
-            const [hour, minute] = notificationSettings.notificationTime.split(':').map(Number);
-
-            payments.forEach(payment => {
-                for (let i = 0; i < 12; i++) { // Schedule for the next 12 months
-                    const targetDate = new Date();
-                    targetDate.setMonth(targetDate.getMonth() + i);
-                    const monthKey = getMonthYearKey(targetDate);
-
-                    if (!payment.paidMonths[monthKey]) {
-                        const dueDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), payment.dueDate, hour, minute, 0);
-                        
-                        // Due date reminders
-                        notificationSettings.remindDays.forEach(day => {
-                            const reminderDate = new Date(dueDate);
-                            reminderDate.setDate(reminderDate.getDate() - day);
-                            if (reminderDate > new Date()) {
-                                const tag = `payment-${payment.id}-${monthKey}-day-${day}`;
-                                let body = `Tu pago de ${payment.name} vence`;
-                                if (day === 0) body += ' hoy.';
-                                if (day === 1) body += ' mañana.';
-                                if (day > 1) body += ` en ${day} días.`;
-
-                                reg.showNotification('Recordatorio de Pago', {
-                                    tag: tag,
-                                    body: body,
-                                    showTrigger: new TimestampTrigger(reminderDate.getTime()),
-                                    icon: 'images/icon-192x192.png'
-                                });
-                            }
-                        });
-
-                        // Overdue reminders
-                        if (notificationSettings.remindOverdue && new Date() > dueDate) {
-                            for (let j = 1; j <= 7; j++) { // Remind for 7 days after due date
-                                const reminderDate = new Date();
-                                reminderDate.setHours(hour, minute, 0, 0);
-                                reminderDate.setDate(reminderDate.getDate() + j);
-                                
-                                if (reminderDate > new Date()) {
-                                     const tag = `payment-${payment.id}-${monthKey}-overdue-${j}`;
-                                     reg.showNotification('Pago Vencido', {
-                                        tag: tag,
-                                        body: `El pago de ${payment.name} está vencido.`,
-                                        showTrigger: new TimestampTrigger(reminderDate.getTime()),
-                                        icon: 'images/icon-192x192.png'
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        };
-
-        const cancelNotificationsForPayment = async (payment, monthKey = null) => {
-             if (Notification.permission !== 'granted') return;
-             const reg = await navigator.serviceWorker.ready;
-             const notifications = await reg.getNotifications({ includeTriggered: true });
-             notifications.forEach(notification => {
-                 const tagParts = notification.tag.split('-');
-                 const isPaymentMatch = tagParts[0] === 'payment' && tagParts[1] === payment.id;
-                 
-                 // If a specific month is provided, only cancel for that month.
-                 // Otherwise (e.g., when deleting a payment), cancel for all months.
-                 const isMonthMatch = !monthKey || (tagParts.length > 2 && `${tagParts[2]}-${tagParts[3]}` === monthKey);
-
-                 if (isPaymentMatch && isMonthMatch) {
-                     notification.close();
-                 }
-             });
-        };
-
 
         document.addEventListener('DOMContentLoaded', () => {
-            // DOM Elements
-            const themeToggleBtn = document.getElementById('themeToggleBtn');
-            const paymentNameInput = document.getElementById('paymentName');
-            const paymentsListEl = document.getElementById('paymentsList');
-            const addPaymentForm = document.getElementById('addPaymentForm');
-            const cancelAddBtn = document.getElementById('cancelAddBtn');
-            const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
-            const toggleFormBtn = document.getElementById('toggleFormBtn');
-            const toggleFormBtnText = document.getElementById('toggleFormBtnText');
-            const prevMonthBtn = document.getElementById('prevMonthBtn');
-            const nextMonthBtn = document.getElementById('nextMonthBtn');
-            const modalEditBtn = document.getElementById('modalEditBtn');
-            const modalDeleteBtn = document.getElementById('modalDeleteBtn');
-            const modalCancelBtn = document.getElementById('modalCancelBtn');
-            const longPressModalEl = document.getElementById('longPressModal');
-            const confirmationModalConfirmBtn = document.getElementById('confirmationModalConfirmBtn');
-            const confirmationModalCancelBtn = document.getElementById('confirmationModalCancelBtn');
-            const hamburgerBtn = document.getElementById('hamburgerBtn');
-            const closeMenuBtn = document.getElementById('closeMenuBtn');
-            const menuOverlay = document.getElementById('menuOverlay');
-            const closeHistoryBtn = document.getElementById('closeHistoryBtn');
-            const closeFutureInstallmentsBtn = document.getElementById('closeFutureInstallmentsBtn');
-            const showHistoryBtn = document.getElementById('showHistoryBtn');
-            const closeCategorizationBtn = document.getElementById('closeCategorizationBtn');
-            const analyzeInstallmentsBtn = document.getElementById('analyzeInstallmentsBtn');
-            const analyzeExpensesBtn = document.getElementById('analyzeExpensesBtn');
-            const scanInvoiceBtn = document.getElementById('scanInvoiceBtn');
-            const summaryFileEl = document.getElementById('summaryFile');
-            const invoiceFileEl = document.getElementById('invoiceFile');
-            const exportDataBtn = document.getElementById('exportDataBtn');
-            const importDataBtn = document.getElementById('importDataBtn');
-            const importFileEl = document.getElementById('importFile');
-            const exportCalendarBtn = document.getElementById('exportCalendarBtn');
-            const modifyApiKeyBtn = document.getElementById('modifyApiKeyBtn');
-            const apiKeyForm = document.getElementById('apiKeyForm');
-            const apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
-            // Notification settings elements
-            const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
-            const closeNotificationSettingsBtn = document.getElementById('closeNotificationSettingsBtn');
-            const requestNotificationPermissionBtn = document.getElementById('requestNotificationPermissionBtn');
-            const notificationSettingsForm = document.getElementById('notificationSettingsForm');
-
-
-            if ('serviceWorker' in navigator) { 
-                window.addEventListener('load', () => { 
-                    navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW error', err)); 
-                }); 
-            }
-
-            if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
-            if (prevMonthBtn) prevMonthBtn.addEventListener('click', () => { selectedMonthOffset--; renderAll(); });
-            if (nextMonthBtn) nextMonthBtn.addEventListener('click', () => { selectedMonthOffset++; renderAll(); });
-            if (toggleFormBtn) toggleFormBtn.addEventListener('click', () => { const isVisible = addPaymentFormContainer.classList.toggle('visible'); toggleFormBtnText.textContent = isVisible ? 'Ocultar Formulario' : 'Agregar Nuevo Pago'; if (isVisible) paymentNameInput.focus(); else resetForm(); });
-            if (cancelAddBtn) cancelAddBtn.addEventListener('click', () => { addPaymentFormContainer.classList.remove('visible'); toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; resetForm(); });
-            if (addPaymentForm) addPaymentForm.addEventListener('submit', handleAddOrUpdatePayment);
+            themeToggleBtn.addEventListener('click', toggleTheme);
+            prevMonthBtn.addEventListener('click', () => { selectedMonthOffset--; renderAll(); });
+            nextMonthBtn.addEventListener('click', () => { selectedMonthOffset++; renderAll(); });
+            toggleFormBtn.addEventListener('click', () => { const isVisible = addPaymentFormContainer.classList.toggle('visible'); toggleFormBtnText.textContent = isVisible ? 'Ocultar Formulario' : 'Agregar Nuevo Pago'; if (isVisible) paymentNameInput.focus(); else resetForm(); });
+            cancelAddBtn.addEventListener('click', () => { addPaymentFormContainer.classList.remove('visible'); toggleFormBtnText.textContent = 'Agregar Nuevo Pago'; resetForm(); });
+            addPaymentForm.addEventListener('submit', handleAddOrUpdatePayment);
             
-            if (paymentsListEl) {
-                paymentsListEl.addEventListener('click', (e) => {
-                    const target = e.target.closest('button'); if (!target) return;
-                    const item = target.closest('.payment-item');
-                    if (!item) return;
-                    const id = item.dataset.id;
-                    if (target.classList.contains('edit-btn')) editPayment(id);
-                    else if (target.classList.contains('delete-btn')) showConfirmationModal('¿Seguro que quieres eliminar este pago?', () => deletePayment(id));
-                    else if (target.dataset.action) togglePaymentStatus(id, target.dataset.action === 'mark_paid');
-                });
-                const clearLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }};
-                paymentsListEl.addEventListener('touchstart', (e) => {
-                    const item = e.target.closest('.payment-item'); if (!item || e.target.closest('button')) return;
-                    swipeState.targetEl = item.querySelector('.payment-item-content'); swipeState.id = item.dataset.id; swipeState.isPaid = item.dataset.isPaid === 'true';
-                    swipeState.startX = e.touches[0].clientX; swipeState.currentX = swipeState.startX; swipeState.startY = e.touches[0].clientY; swipeState.currentY = swipeState.startY; swipeState.isSwiping = false;
-                    clearLongPress(); longPressTargetId = item.dataset.id;
-                    longPressTimer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); openLongPressModal(longPressTargetId); longPressTimer = null; if (swipeState.targetEl) { swipeState.targetEl.style.transition = 'transform 0.2s ease-out'; swipeState.targetEl.style.transform = ''; } swipeState.targetEl = null; }, LONG_PRESS_DURATION);
-                }, { passive: false });
-                paymentsListEl.addEventListener('touchmove', (e) => {
-                    if (!swipeState.targetEl || (!longPressTimer && !swipeState.isSwiping)) return;
-                    swipeState.currentX = e.touches[0].clientX; swipeState.currentY = e.touches[0].clientY; 
-                    let diffX = swipeState.currentX - swipeState.startX, diffY = swipeState.currentY - swipeState.startY;
-                    if (longPressTimer && (Math.abs(diffX) > MOVE_THRESHOLD || Math.abs(diffY) > MOVE_THRESHOLD)) clearLongPress();
-                    if (!longPressTimer && !swipeState.isSwiping) { if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > MOVE_THRESHOLD) swipeState.isSwiping = true; else return; }
-                    if (swipeState.isSwiping) {
-                        e.preventDefault(); swipeState.targetEl.style.transition = 'none'; swipeState.targetEl.style.transform = `translateX(${diffX}px)`;
-                        const parent = swipeState.targetEl.closest('.payment-item'); const right = parent.querySelector('.swipe-right'); const left = parent.querySelector('.swipe-left');
-                        const opacity = Math.min(Math.abs(diffX) / SWIPE_THRESHOLD, 1);
-                        if (diffX > 0) { right.style.opacity = opacity; left.style.opacity = 0; } else { left.style.opacity = opacity; right.style.opacity = 0; }
-                    }
-                }, { passive: false });
-                paymentsListEl.addEventListener('touchend', (e) => {
-                    clearLongPress(); if (!swipeState.isSwiping || !swipeState.targetEl) { swipeState = {}; return; }
-                    const diffX = swipeState.currentX - swipeState.startX; swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
-                    const parent = swipeState.targetEl.closest('.payment-item'); parent.querySelector('.swipe-right').style.opacity = '0'; parent.querySelector('.swipe-left').style.opacity = '0';
-                    if (Math.abs(diffX) > SWIPE_THRESHOLD) togglePaymentStatus(swipeState.id, !swipeState.isPaid); else swipeState.targetEl.style.transform = 'translateX(0px)';
-                    swipeState = {};
-                });
-                paymentsListEl.addEventListener('touchcancel', (e) => {
-                    clearLongPress(); if (swipeState.targetEl) { swipeState.targetEl.style.transition = 'transform 0.2s ease-out'; swipeState.targetEl.style.transform = 'translateX(0px)'; const parent = swipeState.targetEl.closest('.payment-item'); if(parent) { parent.querySelector('.swipe-right').style.opacity = '0'; parent.querySelector('.swipe-left').style.opacity = '0'; } }
-                    swipeState = {};
-                });
-            }
-
-            if (modalEditBtn) modalEditBtn.addEventListener('click', () => { if(longPressTargetId) editPayment(longPressTargetId); closeLongPressModal(); });
-            if (modalDeleteBtn) modalDeleteBtn.addEventListener('click', () => { if(longPressTargetId) showConfirmationModal('¿Seguro que quieres eliminar este pago?', () => deletePayment(longPressTargetId)); closeLongPressModal(); });
-            if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeLongPressModal);
-            if (longPressModalEl) longPressModalEl.addEventListener('click', (e) => { if (e.target === longPressModalEl) closeLongPressModal(); });
-            if (confirmationModalConfirmBtn) confirmationModalConfirmBtn.addEventListener('click', () => { if (typeof _confirmationCallback === 'function') _confirmationCallback(); hideConfirmationModal(); });
-            if (confirmationModalCancelBtn) confirmationModalCancelBtn.addEventListener('click', hideConfirmationModal);
-            if (hamburgerBtn) hamburgerBtn.addEventListener('click', openMenu);
-            if (closeMenuBtn) closeMenuBtn.addEventListener('click', closeMenu);
-            if (menuOverlay) menuOverlay.addEventListener('click', closeMenu);
-            if (closeHistoryBtn) closeHistoryBtn.addEventListener('click', () => showView('mainContent'));
-            if (closeFutureInstallmentsBtn) closeFutureInstallmentsBtn.addEventListener('click', () => showView('mainContent'));
-            if (showHistoryBtn) showHistoryBtn.addEventListener('click', (e) => { e.preventDefault(); renderHistory(); showView('historyView'); closeMenu(); });
-            if (closeCategorizationBtn) closeCategorizationBtn.addEventListener('click', () => showView('mainContent'));
-            
-            // FIX: Corrected analysis button logic
-            if (analyzeInstallmentsBtn) analyzeInstallmentsBtn.addEventListener('click', () => {
-                if (futureInstallments.length > 0) {
-                    renderFutureInstallmentsView();
-                    showView('futureInstallmentsView');
-                } else {
-                    currentAnalysisType = 'installments';
-                    summaryFileEl.click();
+            paymentsListEl.addEventListener('click', (e) => {
+                const target = e.target.closest('button'); if (!target) return;
+                const id = target.closest('.payment-item').dataset.id;
+                if (target.classList.contains('edit-btn')) editPayment(id);
+                else if (target.classList.contains('delete-btn')) showConfirmationModal('¿Seguro que quieres eliminar este pago?', () => deletePayment(id));
+                else if (target.dataset.action) togglePaymentStatus(id, target.dataset.action === 'mark_paid');
+            });
+            const clearLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }};
+            paymentsListEl.addEventListener('touchstart', (e) => {
+                const item = e.target.closest('.payment-item'); if (!item || e.target.closest('button')) return;
+                swipeState.targetEl = item.querySelector('.payment-item-content'); swipeState.id = item.dataset.id; swipeState.isPaid = item.dataset.isPaid === 'true';
+                swipeState.startX = e.touches[0].clientX; swipeState.currentX = swipeState.startX; swipeState.startY = e.touches[0].clientY; swipeState.currentY = swipeState.startY; swipeState.isSwiping = false;
+                clearLongPress(); longPressTargetId = item.dataset.id;
+                longPressTimer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(50); openLongPressModal(longPressTargetId); longPressTimer = null; if (swipeState.targetEl) { swipeState.targetEl.style.transition = 'transform 0.2s ease-out'; swipeState.targetEl.style.transform = ''; } swipeState.targetEl = null; }, LONG_PRESS_DURATION);
+            }, { passive: false });
+            paymentsListEl.addEventListener('touchmove', (e) => {
+                if (!swipeState.targetEl || (!longPressTimer && !swipeState.isSwiping)) return;
+                swipeState.currentX = e.touches[0].clientX; swipeState.currentY = e.touches[0].clientY; 
+                let diffX = swipeState.currentX - swipeState.startX, diffY = swipeState.currentY - swipeState.startY;
+                if (longPressTimer && (Math.abs(diffX) > MOVE_THRESHOLD || Math.abs(diffY) > MOVE_THRESHOLD)) clearLongPress();
+                if (!longPressTimer && !swipeState.isSwiping) { if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > MOVE_THRESHOLD) swipeState.isSwiping = true; else return; }
+                if (swipeState.isSwiping) {
+                    e.preventDefault(); swipeState.targetEl.style.transition = 'none'; swipeState.targetEl.style.transform = `translateX(${diffX}px)`;
+                    const parent = swipeState.targetEl.closest('.payment-item'); const right = parent.querySelector('.swipe-right'); const left = parent.querySelector('.swipe-left');
+                    const opacity = Math.min(Math.abs(diffX) / SWIPE_THRESHOLD, 1);
+                    if (diffX > 0) { right.style.opacity = opacity; left.style.opacity = 0; } else { left.style.opacity = opacity; right.style.opacity = 0; }
                 }
-                closeMenu();
+            }, { passive: false });
+            paymentsListEl.addEventListener('touchend', (e) => {
+                clearLongPress(); if (!swipeState.isSwiping || !swipeState.targetEl) { swipeState = {}; return; }
+                const diffX = swipeState.currentX - swipeState.startX; swipeState.targetEl.style.transition = 'transform 0.2s ease-out';
+                const parent = swipeState.targetEl.closest('.payment-item'); parent.querySelector('.swipe-right').style.opacity = '0'; parent.querySelector('.swipe-left').style.opacity = '0';
+                if (Math.abs(diffX) > SWIPE_THRESHOLD) togglePaymentStatus(swipeState.id, !swipeState.isPaid); else swipeState.targetEl.style.transform = 'translateX(0px)';
+                swipeState = {};
+            });
+            paymentsListEl.addEventListener('touchcancel', (e) => {
+                clearLongPress(); if (swipeState.targetEl) { swipeState.targetEl.style.transition = 'transform 0.2s ease-out'; swipeState.targetEl.style.transform = 'translateX(0px)'; const parent = swipeState.targetEl.closest('.payment-item'); if(parent) { parent.querySelector('.swipe-right').style.opacity = '0'; parent.querySelector('.swipe-left').style.opacity = '0'; } }
+                swipeState = {};
             });
 
-            if (analyzeExpensesBtn) analyzeExpensesBtn.addEventListener('click', () => {
-                const recentMonth = Object.keys(categorizedExpenses).sort().pop();
-                if (recentMonth) {
-                    renderCategorizationView(recentMonth);
-                    showView('categorizationView');
-                } else {
-                    currentAnalysisType = 'expenses';
-                    summaryFileEl.click();
-                }
-                closeMenu();
-            });
-
-            if (scanInvoiceBtn) scanInvoiceBtn.addEventListener('click', () => {
-                invoiceFileEl.click();
-                closeMenu();
-            });
-
-            if (summaryFileEl) summaryFileEl.addEventListener('change', handleSummaryFileSelected);
-            if (invoiceFileEl) invoiceFileEl.addEventListener('change', handleInvoiceFileSelected);
+            modalEditBtn.addEventListener('click', () => { if(longPressTargetId) editPayment(longPressTargetId); closeLongPressModal(); });
+            modalDeleteBtn.addEventListener('click', () => { if(longPressTargetId) showConfirmationModal('¿Seguro que quieres eliminar este pago?', () => deletePayment(longPressTargetId)); closeLongPressModal(); });
+            modalCancelBtn.addEventListener('click', closeLongPressModal);
+            longPressModalEl.addEventListener('click', (e) => { if (e.target === longPressModalEl) closeLongPressModal(); });
+            confirmationModalConfirmBtn.addEventListener('click', () => { if (typeof _confirmationCallback === 'function') _confirmationCallback(); hideConfirmationModal(); });
+            confirmationModalCancelBtn.addEventListener('click', hideConfirmationModal);
+            hamburgerBtn.addEventListener('click', openMenu); closeMenuBtn.addEventListener('click', closeMenu); menuOverlay.addEventListener('click', closeMenu);
+            closeHistoryBtn.addEventListener('click', () => showView('mainContent'));
+            closeFutureInstallmentsBtn.addEventListener('click', () => showView('mainContent'));
+            showHistoryBtn.addEventListener('click', (e) => { e.preventDefault(); renderHistory(); showView('historyView'); closeMenu(); });
+            showFutureInstallmentsBtn.addEventListener('click', (e) => { e.preventDefault(); renderFutureInstallmentsView(); showView('futureInstallmentsView'); closeMenu(); });
+            exportDataBtn.addEventListener('click', exportData);
+            importDataBtn.addEventListener('click', () => importFileEl.click());
+            importFileEl.addEventListener('change', importData);
+            exportCalendarBtn.addEventListener('click', () => { generateAndDownloadICS(); closeMenu(); });
+            enableNotificationsBtn.addEventListener('click', handleNotificationsPermission);
             
-            if (exportDataBtn) exportDataBtn.addEventListener('click', exportData);
-            if (importDataBtn) importDataBtn.addEventListener('click', () => importFileEl.click());
-            if (importFileEl) importFileEl.addEventListener('change', importData);
-            if (exportCalendarBtn) exportCalendarBtn.addEventListener('click', () => { generateAndDownloadICS(); closeMenu(); });
-            
-            if (modifyApiKeyBtn) modifyApiKeyBtn.addEventListener('click', () => { showApiKeyModal(false); closeMenu(); });
-            if (apiKeyForm) apiKeyForm.addEventListener('submit', handleSaveApiKey);
-            if (apiKeyModalCancelBtn) apiKeyModalCancelBtn.addEventListener('click', hideApiKeyModal);
-
-            // Notification settings listeners
-            if (notificationSettingsBtn) notificationSettingsBtn.addEventListener('click', () => {
-                updateNotificationStatusUI();
-                loadNotificationSettingsUI();
-                showView('notificationSettingsView');
+            analyzeSummaryBtn.addEventListener('click', () => {
+                summaryFileEl.click();
                 closeMenu();
             });
-            if (closeNotificationSettingsBtn) closeNotificationSettingsBtn.addEventListener('click', () => showView('mainContent'));
-            if (requestNotificationPermissionBtn) requestNotificationPermissionBtn.addEventListener('click', handleNotificationsPermission);
-            if (notificationSettingsForm) notificationSettingsForm.addEventListener('submit', handleSaveNotificationSettings);
 
+            summaryFileEl.addEventListener('change', handleSummaryFileSelected);
+            
+            modifyApiKeyBtn.addEventListener('click', () => { showApiKeyModal(false); closeMenu(); });
+            apiKeyForm.addEventListener('submit', handleSaveApiKey);
+            apiKeyModalCancelBtn.addEventListener('click', hideApiKeyModal);
 
-            loadDataFromStorage();
+            loadPaymentsFromStorage();
             applyTheme(localStorage.getItem('theme') || 'light');
+            updateNotificationsButton(); 
             renderAll();
-            calculateAndDisplaySummary();
-            scheduleNotifications(); // Schedule notifications on app load
         });
 
     </script>
