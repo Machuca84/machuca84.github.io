@@ -38,7 +38,7 @@ self.addEventListener('notificationclick', event => {
   );
 });
 
-// NEW: Listener for when a notification is closed by the user (optional but good practice)
+// Listener for when a notification is closed by the user (optional but good practice)
 self.addEventListener('notificationclose', event => {
     console.log('Notificación cerrada:', event.notification);
 });
