@@ -445,6 +445,10 @@
                                         <label for="remind3Days" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">3 días antes</label>
                                     </div>
                                     <div class="flex items-center">
+                                        <input id="remind2Days" name="remindDays" type="checkbox" value="2" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
+                                        <label for="remind2Days" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">2 días antes</label>
+                                    </div>
+                                    <div class="flex items-center">
                                         <input id="remind1Day" name="remindDays" type="checkbox" value="1" class="h-4 w-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500">
                                         <label for="remind1Day" class="ml-3 block text-sm font-medium text-slate-700 dark:text-slate-300">1 día antes</label>
                                     </div>
@@ -671,7 +675,6 @@
                 const storedCategorizedExpenses = localStorage.getItem('categorizedExpensesApp');
                 if(storedCategorizedExpenses) categorizedExpenses = JSON.parse(storedCategorizedExpenses);
 
-                // NEW: Load notification settings
                 const storedNotificationSettings = localStorage.getItem('notificationSettingsApp');
                 if (storedNotificationSettings) {
                     notificationSettings = JSON.parse(storedNotificationSettings);
@@ -688,7 +691,6 @@
                 localStorage.setItem('monthlyPaymentsApp', JSON.stringify(payments)); 
                 localStorage.setItem('futureInstallmentsApp', JSON.stringify(futureInstallments));
                 localStorage.setItem('categorizedExpensesApp', JSON.stringify(categorizedExpenses));
-                // NEW: Save notification settings
                 localStorage.setItem('notificationSettingsApp', JSON.stringify(notificationSettings));
             } catch (e) { 
                 console.error("Error al guardar los datos:", e); 
@@ -895,6 +897,7 @@
             if(preserveScroll) lastScrollY = window.scrollY; 
             updateMonthSelectorUI(); 
             renderPayments(); 
+            calculateAndDisplaySummary(); 
             if(preserveScroll) requestAnimationFrame(() => { window.scrollTo(0, lastScrollY); }); 
         };
 
@@ -1503,7 +1506,11 @@
              notifications.forEach(notification => {
                  const tagParts = notification.tag.split('-');
                  const isPaymentMatch = tagParts[0] === 'payment' && tagParts[1] === payment.id;
-                 const isMonthMatch = !monthKey || tagParts[2] === monthKey;
+                 
+                 // If a specific month is provided, only cancel for that month.
+                 // Otherwise (e.g., when deleting a payment), cancel for all months.
+                 const isMonthMatch = !monthKey || (tagParts.length > 2 && `${tagParts[2]}-${tagParts[3]}` === monthKey);
+
                  if (isPaymentMatch && isMonthMatch) {
                      notification.close();
                  }
@@ -1626,15 +1633,27 @@
             if (showHistoryBtn) showHistoryBtn.addEventListener('click', (e) => { e.preventDefault(); renderHistory(); showView('historyView'); closeMenu(); });
             if (closeCategorizationBtn) closeCategorizationBtn.addEventListener('click', () => showView('mainContent'));
             
+            // FIX: Corrected analysis button logic
             if (analyzeInstallmentsBtn) analyzeInstallmentsBtn.addEventListener('click', () => {
-                currentAnalysisType = 'installments';
-                summaryFileEl.click();
+                if (futureInstallments.length > 0) {
+                    renderFutureInstallmentsView();
+                    showView('futureInstallmentsView');
+                } else {
+                    currentAnalysisType = 'installments';
+                    summaryFileEl.click();
+                }
                 closeMenu();
             });
 
             if (analyzeExpensesBtn) analyzeExpensesBtn.addEventListener('click', () => {
-                currentAnalysisType = 'expenses';
-                summaryFileEl.click();
+                const recentMonth = Object.keys(categorizedExpenses).sort().pop();
+                if (recentMonth) {
+                    renderCategorizationView(recentMonth);
+                    showView('categorizationView');
+                } else {
+                    currentAnalysisType = 'expenses';
+                    summaryFileEl.click();
+                }
                 closeMenu();
             });
 
