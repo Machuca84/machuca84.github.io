@@ -252,23 +252,30 @@
 
     <div id="viewWrapper" class="relative">
         <div id="mainContent" class="view-container container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
-            <header class="mb-6 text-center relative">
-                <button id="hamburgerBtn" class="absolute top-0 left-0 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Abrir menú">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                </button>
-                <h1 class="text-4xl font-bold">Gestor de Pagos Mensuales</h1>
-                <p class="text-slate-500 mt-2">Organiza tus finanzas y no olvides ningún pago.</p>
-                <button id="themeToggleBtn" class="absolute top-0 right-0 p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Cambiar tema">
-                    <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                    </svg>
-                </button>
+             <!-- MODIFICATION START: Header with Auto-Adjusting Font Size -->
+             <header class="mb-6 flex items-center justify-between h-16">
+                <div class="flex-shrink-0 w-12">
+                    <button id="hamburgerBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Abrir menú">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-grow text-center px-2">
+                    <h1 class="font-bold whitespace-nowrap" style="font-size: clamp(1.125rem, 5.5vw, 1.5rem);">Gestor de Pagos</h1>
+                </div>
+                 <div class="flex-shrink-0 w-12 flex justify-end">
+                    <button id="themeToggleBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Cambiar tema">
+                        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
             </header>
+            <!-- MODIFICATION END -->
 
             <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
                 <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
@@ -363,7 +370,7 @@
                         Cerrar
                     </button>
                 </div>
-                <div id="chartCard" class="bg-white rounded-lg shadow-xl p-4 sm:p-6 mb-6">
+                <div id="chartCard" class="rounded-lg shadow-xl p-4 sm:p-6 mb-6">
                     <h2 class="text-xl font-semibold mb-4">Proyección de Gastos en Cuotas</h2>
                     <div id="installmentsChartContainer" class="relative h-96">
                         <canvas id="installmentsChart"></canvas>
@@ -714,12 +721,9 @@
             
             const chartContainer = document.getElementById('installmentsChartContainer');
             const chartCard = document.getElementById('chartCard');
-
             const isDarkMode = localStorage.getItem('theme') === 'dark';
 
-            if(chartCard) {
-                // Forcefully set the background color of the chart's parent card
-                chartCard.classList.remove('bg-white', 'dark:bg-slate-800'); // Remove Tailwind classes to avoid conflict
+            if (chartCard) {
                 chartCard.style.backgroundColor = isDarkMode ? '#1e293b' : '#ffffff'; 
             }
 
