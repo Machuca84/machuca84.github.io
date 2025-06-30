@@ -32,10 +32,13 @@ self.addEventListener('notificationclick', event => {
       }
       // Si no hay ninguna ventana abierta, abre una nueva.
       if (clients.openWindow) {
-        // Cambia '/' por la ruta a tu archivo HTML si no está en la raíz.
-        // Por ejemplo: '/gestor-pagos.html'
         return clients.openWindow('.'); 
       }
     })
   );
+});
+
+// NEW: Listener for when a notification is closed by the user (optional but good practice)
+self.addEventListener('notificationclose', event => {
+    console.log('Notificación cerrada:', event.notification);
 });
