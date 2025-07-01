@@ -11,6 +11,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="images/icon-192x192.png">
     <style>
+        /* Estilos CSS (sin cambios, se mantienen los originales) */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; 
@@ -174,6 +175,7 @@
     </style>
 </head>
 <body class="antialiased">
+    <!-- Contenido HTML (sin cambios, se mantiene el original) -->
     <input type="file" id="importFile" accept=".json" style="display: none;">
     <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
 
@@ -431,7 +433,21 @@
         </div>
     </div>
 
-    <script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- START OF YOUR APP LOGIC ---
+
+        // Firebase references
+        let db, auth;
+        let userId;
+        let paymentsUnsubscribe = null;
+        let installmentsUnsubscribe = null;
+
         // Application State
         let payments = [];
         let futureInstallments = []; 
@@ -454,7 +470,7 @@
         const SWIPE_THRESHOLD = 60; 
         const MOVE_THRESHOLD = 10; 
 
-        // DOM Elements
+        // DOM Elements (same as before)
         const htmlEl = document.documentElement;
         const themeToggleBtn = document.getElementById('themeToggleBtn');
         const sunIcon = document.getElementById('sunIcon');
@@ -518,7 +534,286 @@
         const apiKeyForm = document.getElementById('apiKeyForm');
         const modalApiKeyInput = document.getElementById('modalApiKeyInput');
         const apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
+
+        // --- FIREBASE INITIALIZATION ---
+        const initializeFirebase = async () => {
+            try {
+                // These variables are provided by the environment.
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        console.log("User is signed in:", user.uid);
+                        userId = user.uid;
+                        // User is authenticated, now we can fetch data.
+                        loadAndListenForData();
+                    } else {
+                        console.log("User is not signed in. Authenticating...");
+                        // If __initial_auth_token is available, use it. Otherwise, sign in anonymously.
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                createPageNotification("Error de Conexión", "error", "No se pudo conectar a la base de datos.");
+            }
+        };
+
+        const loadAndListenForData = () => {
+            if (!userId) return;
+
+            // Stop listening to old data if user changes
+            if (paymentsUnsubscribe) paymentsUnsubscribe();
+            if (installmentsUnsubscribe) installmentsUnsubscribe();
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const paymentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'payments');
+            const installmentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'futureInstallments');
+
+            // Listen for real-time updates on payments
+            paymentsUnsubscribe = onSnapshot(paymentsCollectionRef, (snapshot) => {
+                payments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderAll();
+            }, (error) => {
+                console.error("Error listening to payments:", error);
+                createPageNotification("Error al cargar los pagos.", "error");
+            });
+
+            // Listen for real-time updates on future installments
+            installmentsUnsubscribe = onSnapshot(installmentsCollectionRef, (snapshot) => {
+                futureInstallments = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // If the installments view is open, re-render it
+                if (!futureInstallmentsView.classList.contains('hidden')) {
+                    renderFutureInstallmentsView();
+                }
+            }, (error) => {
+                console.error("Error listening to installments:", error);
+                createPageNotification("Error al cargar las cuotas futuras.", "error");
+            });
+        };
+
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW error', err)); }); }
         
+        // --- CORE APP LOGIC (MODIFIED FOR FIRESTORE) ---
+
+        const handleAddOrUpdatePayment = async (e) => {
+            e.preventDefault();
+            if (!userId) return createPageNotification("Debes estar conectado para guardar datos.", "error");
+
+            const id = editingPaymentIdInput.value;
+            const name = paymentNameInput.value.trim();
+            const dueDate = parseInt(paymentDayInput.value);
+            const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
+            if (!name || !dueDate) return;
+
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            
+            try {
+                if (id) {
+                    // UPDATING an existing payment
+                    const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', id);
+                    const displayDate = new Date();
+                    displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
+                    const displayMonthKey = getMonthYearKey(displayDate);
+
+                    // We need to update using dot notation for nested objects in Firestore
+                    const updateData = {
+                        name: name,
+                        dueDate: dueDate,
+                        [`amountOverrides.${displayMonthKey}`]: amount
+                    };
+                    await updateDoc(paymentRef, updateData);
+                    createPageNotification("Pago actualizado con éxito.", "success");
+
+                } else {
+                    // ADDING a new payment
+                    const creationDate = new Date();
+                    creationDate.setMonth(creationDate.getMonth() + selectedMonthOffset);
+                    
+                    const newPayment = {
+                        name, dueDate, amount, 
+                        paidMonths: {}, 
+                        amountOverrides: {}, 
+                        notificationsSent: {}, 
+                        createdAt: getMonthYearKey(creationDate)
+                    };
+                    const paymentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'payments');
+                    await addDoc(paymentsCollectionRef, newPayment);
+                    createPageNotification("Pago agregado con éxito.", "success");
+                }
+                
+                // UI updates will happen automatically via onSnapshot, but we can close the form
+                addPaymentFormContainer.classList.remove('visible');
+                toggleFormBtnText.textContent = 'Agregar Nuevo Pago';
+                resetForm();
+
+            } catch (error) {
+                console.error("Error saving payment:", error);
+                createPageNotification("Error al guardar el pago.", "error");
+            }
+        };
+
+        const deletePayment = async (id) => {
+            if (!userId) return;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            try {
+                const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', id);
+                await deleteDoc(paymentRef);
+                createPageNotification("Pago eliminado.", "success");
+                // onSnapshot will handle the UI update
+            } catch (error) {
+                console.error("Error deleting payment:", error);
+                createPageNotification("No se pudo eliminar el pago.", "error");
+            }
+        };
+
+        const togglePaymentStatus = async (id, markAsPaid) => {
+            if (!userId) return;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            
+            const displayDate = new Date(); 
+            displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); 
+            const displayMonthKey = getMonthYearKey(displayDate);
+            
+            const paymentItemEl = paymentsListEl.querySelector(`[data-id="${id}"]`);
+            if (paymentItemEl) { 
+                const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation'; 
+                paymentItemEl.classList.add(animationClass); 
+                setTimeout(() => paymentItemEl.classList.remove(animationClass), 600); 
+            }
+
+            try {
+                const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', id);
+                // Use dot notation to update a field in a map
+                await updateDoc(paymentRef, {
+                    [`paidMonths.${displayMonthKey}`]: markAsPaid
+                });
+                // No need to call renderAll, onSnapshot will do it.
+            } catch (error) {
+                console.error("Error updating payment status:", error);
+                createPageNotification("No se pudo actualizar el estado.", "error");
+            }
+        };
+        
+        const processExtractedPayments = async (extractedPayments, summaryYear, summaryMonth) => {
+            if (!userId) throw new Error("Usuario no autenticado.");
+            if (!Array.isArray(extractedPayments)) {
+                console.error("Los datos extraídos no son un array:", extractedPayments);
+                return 0;
+            }
+            if (isNaN(summaryYear) || isNaN(summaryMonth) || summaryMonth < 1 || summaryMonth > 12) {
+                console.error("Año o mes del resumen inválido:", { summaryYear, summaryMonth });
+                 throw new Error("El año o mes extraído del resumen no es válido.");
+            }
+            
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+            const installmentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'futureInstallments');
+            const batch = writeBatch(db);
+            let newInstallmentsCount = 0;
+
+            const existingInstallmentIds = new Set(futureInstallments.map(i => i.id));
+
+            extractedPayments.forEach(item => {
+                if (!item.descripcion || !item.monto || !item.cuota || !item.cuota.includes('/')) return;
+
+                const [currentInstallment, totalInstallments] = item.cuota.split('/').map(Number);
+                if (isNaN(currentInstallment) || isNaN(totalInstallments)) return;
+
+                for (let i = currentInstallment; i <= totalInstallments; i++) {
+                    const monthsToAdd = i - currentInstallment;
+                    const installmentDate = new Date(summaryYear, summaryMonth - 1, 15); 
+                    installmentDate.setMonth(installmentDate.getMonth() + monthsToAdd);
+                    
+                    const cleanDescription = item.descripcion.trim().replace(/\s+/g, ' ');
+                    const installmentId = `${cleanDescription}-${i}/${totalInstallments}`;
+
+                    if (!existingInstallmentIds.has(installmentId)) {
+                        const newInstallmentData = {
+                            descripcion: `${cleanDescription} (Cuota ${i}/${totalInstallments})`,
+                            monto: parseFloat(item.monto),
+                            dueDate: installmentDate.toISOString(),
+                        };
+                        // Use the generated ID as the document ID for idempotency
+                        const installmentDocRef = doc(installmentsCollectionRef, installmentId);
+                        batch.set(installmentDocRef, newInstallmentData);
+                        newInstallmentsCount++;
+                        existingInstallmentIds.add(installmentId); // Avoid adding duplicates in the same batch
+                    }
+                }
+            });
+
+            if (newInstallmentsCount > 0) {
+                await batch.commit();
+            }
+            
+            // onSnapshot will handle UI updates
+            return newInstallmentsCount;
+        };
+
+        const importData = (event) => {
+            if (!userId) return createPageNotification("Debes estar conectado para importar datos.", "error");
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) throw new Error("Formato de archivo inválido.");
+                    
+                    showConfirmationModal("Esto reemplazará todos tus datos en la nube. ¿Continuar?", async () => {
+                        const importedPayments = Array.isArray(data) ? data : (data.payments || []);
+                        const importedInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
+
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const batch = writeBatch(db);
+
+                        // Delete existing data (optional, but good for a clean import)
+                        payments.forEach(p => batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'payments', p.id)));
+                        futureInstallments.forEach(i => batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'futureInstallments', i.id)));
+
+                        // Add new data
+                        const paymentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'payments');
+                        importedPayments.forEach(p => {
+                            const { id, ...paymentData } = p; // Don't store the old ID
+                            batch.set(doc(paymentsCollectionRef), paymentData);
+                        });
+
+                        const installmentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'futureInstallments');
+                        importedInstallments.forEach(i => {
+                             const { id, ...installmentData } = i;
+                             batch.set(doc(installmentsCollectionRef, id), installmentData); // Use the original ID for installments
+                        });
+
+                        await batch.commit();
+                        createPageNotification("Datos importados con éxito a la nube.", "success");
+                        // onSnapshot will refresh the UI
+                    });
+                } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
+            };
+            reader.readAsText(file);
+        };
+
+        const exportData = () => {
+            const dataToExport = { payments: payments, futureInstallments: futureInstallments };
+            if (payments.length === 0 && futureInstallments.length === 0) return createPageNotification("No hay datos para exportar.", "info");
+            const dataStr = JSON.stringify(dataToExport, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a'); link.href = url; link.download = 'gestor_pagos_backup.json';
+            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); createPageNotification("Datos exportados con éxito.", "success");
+        };
+
+        // --- UNMODIFIED FUNCTIONS ---
+        // All other functions (UI rendering, calculations, event listeners, etc.)
+        // remain largely the same, as they read from the global `payments` and `futureInstallments`
+        // arrays, which are now kept in sync by Firestore's `onSnapshot`.
+
         const showView = (viewId) => {
             document.querySelectorAll('.view-container').forEach(view => { view.classList.add('hidden'); });
             const viewToShow = document.getElementById(viewId);
@@ -554,8 +849,6 @@
             }
         };
 
-        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW error', err)); }); }
-        
         const applyTheme = (theme) => {
             if (theme === 'dark') {
                 htmlEl.classList.add('dark');
@@ -581,24 +874,6 @@
         const getMonthName = (date) => date.toLocaleString('es-ES', { month: 'long', year: 'numeric' });
         const formatCurrency = (amount) => (amount === null || isNaN(amount)) ? '$ --' : `$${parseFloat(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         
-        const loadPaymentsFromStorage = () => {
-            try {
-                const storedPayments = localStorage.getItem('monthlyPaymentsApp');
-                if (storedPayments) {
-                    payments = JSON.parse(storedPayments);
-                    payments.forEach(p => {
-                        if (!p.paidMonths) p.paidMonths = {}; if (!p.amountOverrides) p.amountOverrides = {};
-                        if (!p.notificationsSent) p.notificationsSent = {}; if (!p.createdAt) p.createdAt = getMonthYearKey(new Date(parseInt(p.id))); 
-                    });
-                }
-                const storedInstallments = localStorage.getItem('futureInstallmentsApp');
-                if(storedInstallments) futureInstallments = JSON.parse(storedInstallments);
-            } catch (e) {
-                console.error("Error al cargar los datos:", e);
-                createPageNotification("No se pudieron cargar los datos guardados.", "error", "Error de Almacenamiento");
-            }
-        };
-        const savePaymentsToStorage = () => { try { localStorage.setItem('monthlyPaymentsApp', JSON.stringify(payments)); localStorage.setItem('futureInstallmentsApp', JSON.stringify(futureInstallments)); } catch (e) { console.error("Error al guardar los datos:", e); createPageNotification("No se pudieron guardar los datos.", "error", "Error de Almacenamiento"); } };
         const calculateAndDisplaySummary = () => {
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
             const displayMonthKey = getMonthYearKey(displayDate);
@@ -622,7 +897,10 @@
                     const notificationKey = `${p.id}-${currentMonthKey}`;
                     if (!p.notificationsSent[notificationKey]) {
                         navigator.serviceWorker.ready.then(reg => reg.showNotification(`Vencimiento: ${p.name}`, { body: daysUntilDue === 0 ? `Tu pago vence hoy.` : `Tu pago vence en ${daysUntilDue} día(s).`, icon: 'images/icon-192x192.png', tag: notificationKey }));
-                        p.notificationsSent[notificationKey] = true; savePaymentsToStorage(); 
+                        // This should also be updated in Firestore
+                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                        const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', p.id);
+                        updateDoc(paymentRef, { [`notificationsSent.${notificationKey}`]: true });
                     }
                 }
             });
@@ -648,55 +926,6 @@
         const showConfirmationModal = (message, onConfirm) => { confirmationModalMessageEl.innerHTML = message; _confirmationCallback = onConfirm; confirmationModalEl.classList.remove('hidden'); document.body.classList.add('modal-is-open'); };
         const hideConfirmationModal = () => { confirmationModalEl.classList.add('hidden'); _confirmationCallback = null; document.body.classList.remove('modal-is-open');};
         
-        // --- FUNCTION MODIFIED ---
-        const handleAddOrUpdatePayment = (e) => {
-            e.preventDefault();
-            const id = editingPaymentIdInput.value;
-            const name = paymentNameInput.value.trim();
-            const dueDate = parseInt(paymentDayInput.value);
-            // Use 'null' for empty amount to distinguish from 0
-            const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
-            if (!name || !dueDate) return;
-
-            if (id) {
-                // Logic for UPDATING an existing payment
-                const pIndex = payments.findIndex(p => p.id === id);
-                if (pIndex > -1) {
-                    const paymentToUpdate = payments[pIndex];
-                    const displayDate = new Date();
-                    displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
-                    const displayMonthKey = getMonthYearKey(displayDate);
-
-                    // Update properties that are not month-specific
-                    paymentToUpdate.name = name;
-                    paymentToUpdate.dueDate = dueDate;
-
-                    // Handle the amount as a month-specific override
-                    if (!paymentToUpdate.amountOverrides) {
-                        paymentToUpdate.amountOverrides = {};
-                    }
-                    paymentToUpdate.amountOverrides[displayMonthKey] = amount;
-                }
-            } else {
-                // Logic for ADDING a new payment (remains the same)
-                const creationDate = new Date();
-                creationDate.setMonth(creationDate.getMonth() + selectedMonthOffset);
-                payments.push({
-                    id: Date.now().toString(), name, dueDate, amount, 
-                    paidMonths: {}, amountOverrides: {}, notificationsSent: {}, 
-                    createdAt: getMonthYearKey(creationDate)
-                });
-            }
-            savePaymentsToStorage();
-            renderAll(true);
-            addPaymentFormContainer.classList.remove('visible');
-            toggleFormBtnText.textContent = 'Agregar Nuevo Pago';
-            resetForm();
-        };
-
-        const deletePayment = (id) => { payments = payments.filter(p => p.id !== id); savePaymentsToStorage(); renderAll(true); };
-        
-        // --- FUNCTION MODIFIED ---
         const editPayment = (id) => {
             const payment = payments.find(p => p.id === id);
             if (!payment) return;
@@ -722,21 +951,12 @@
             window.scrollTo({ top: addPaymentFormContainer.offsetTop, behavior: 'smooth' });
         };
 
-        const togglePaymentStatus = (id, markAsPaid) => {
-            const paymentIndex = payments.findIndex(p => p.id === id); if (paymentIndex === -1) return;
-            const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const displayMonthKey = getMonthYearKey(displayDate);
-            const payment = payments[paymentIndex]; if (!payment.paidMonths) payment.paidMonths = {};
-            payment.paidMonths[displayMonthKey] = markAsPaid;
-            const paymentItemEl = paymentsListEl.querySelector(`[data-id="${id}"]`);
-            if (paymentItemEl) { const animationClass = markAsPaid ? 'marked-as-paid-animation' : 'marked-as-pending-animation'; paymentItemEl.classList.add(animationClass); setTimeout(() => paymentItemEl.classList.remove(animationClass), 600); }
-            savePaymentsToStorage(); setTimeout(() => { renderAll(true); }, 150);
-        };
         const getEffectiveAmount = (payment, monthKey) => payment.amountOverrides?.[monthKey] ?? payment.amount;
         const renderPayments = () => {
             paymentsListEl.innerHTML = ''; const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); const displayMonthKey = getMonthYearKey(displayDate);
             const activePaymentsForMonth = payments.filter(p => p.createdAt && p.createdAt <= displayMonthKey);
             if (activePaymentsForMonth.length === 0) { paymentsListEl.innerHTML = `<div class="text-center py-10"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg><p class="mt-3 text-sm font-medium">No hay pagos para este mes.</p></div>`; calculateAndDisplaySummary(); return; }
-            const sortedPayments = activePaymentsForMonth.sort((a, b) => a.dueDate - b.dueDate).sort((a,b) => (a.paidMonths[displayMonthKey] ? 1 : 0) - (b.paidMonths[displayMonthKey] ? 1 : 0));
+            const sortedPayments = activePaymentsForMonth.sort((a, b) => a.dueDate - b.dueDate).sort((a,b) => (a.paidMonths?.[displayMonthKey] ? 1 : 0) - (b.paidMonths?.[displayMonthKey] ? 1 : 0));
             sortedPayments.forEach(payment => {
                  const isPaid = payment.paidMonths && payment.paidMonths[displayMonthKey]; const effectiveAmount = getEffectiveAmount(payment, displayMonthKey);
                 const paymentItem = document.createElement('div'); paymentItem.className = `payment-item bg-white shadow-lg rounded-xl`; paymentItem.dataset.id = payment.id; paymentItem.dataset.isPaid = isPaid ? 'true' : 'false';
@@ -911,7 +1131,7 @@
                 loadingModalText.textContent = `Analizando: ${file.name} (${i} de ${files.length})`;
                 try {
                     const base64Data = await readFileAsBase64(file);
-                    const newCount = await analyzeSummaryWithAI(base64Data, file.type, false);
+                    const newCount = await analyzeSummaryWithAI(base64Data, file.type);
                     totalNewInstallments += newCount;
                     filesProcessed++;
                 } catch (error) {
@@ -925,7 +1145,6 @@
 
             if (filesProcessed > 0) {
                  createPageNotification(`${filesProcessed} resumen(es) analizado(s) con éxito. Se agregaron ${totalNewInstallments} cuotas nuevas.`, 'success', 'Análisis Completado');
-                 renderFutureInstallmentsView();
                  showView('futureInstallmentsView');
             }
             if (filesFailed > 0) {
@@ -938,7 +1157,7 @@
             summaryFileEl.value = '';
         };
 
-        const analyzeSummaryWithAI = async (base64Data, mimeType, showViewAfter = true) => {
+        const analyzeSummaryWithAI = async (base64Data, mimeType) => {
             const apiKey = localStorage.getItem('geminiApiKey');
             if (!apiKey) throw new Error("Clave API no encontrada.");
 
@@ -962,64 +1181,12 @@
                     throw new Error("La respuesta de la IA no contiene la estructura esperada de anio, mes y gastos.");
                 }
 
-                return processExtractedPayments(resultData.gastos, resultData.anio, resultData.mes, showViewAfter);
+                return await processExtractedPayments(resultData.gastos, resultData.anio, resultData.mes);
             } else {
                 throw new Error("La respuesta de la IA no tuvo el formato esperado.");
             }
         };
         
-        const processExtractedPayments = (extractedPayments, summaryYear, summaryMonth, showViewAfter = true) => {
-            if (!Array.isArray(extractedPayments)) {
-                console.error("Los datos extraídos no son un array:", extractedPayments);
-                return 0;
-            }
-            if (isNaN(summaryYear) || isNaN(summaryMonth) || summaryMonth < 1 || summaryMonth > 12) {
-                console.error("Año o mes del resumen inválido:", { summaryYear, summaryMonth });
-                 throw new Error("El año o mes extraído del resumen no es válido.");
-            }
-            
-            const newInstallments = [];
-            const existingInstallmentIds = new Set(futureInstallments.map(i => i.id));
-
-            extractedPayments.forEach(item => {
-                if (!item.descripcion || !item.monto || !item.cuota || !item.cuota.includes('/')) return;
-
-                const [currentInstallment, totalInstallments] = item.cuota.split('/').map(Number);
-                if (isNaN(currentInstallment) || isNaN(totalInstallments)) return;
-
-                for (let i = currentInstallment; i <= totalInstallments; i++) {
-                    const monthsToAdd = i - currentInstallment;
-                    const installmentDate = new Date(summaryYear, summaryMonth - 1, 15); 
-                    installmentDate.setMonth(installmentDate.getMonth() + monthsToAdd);
-                    
-                    const cleanDescription = item.descripcion.trim().replace(/\s+/g, ' ');
-                    const installmentId = `${cleanDescription}-${i}/${totalInstallments}`;
-
-                    if (!existingInstallmentIds.has(installmentId)) {
-                         newInstallments.push({
-                            id: installmentId,
-                            descripcion: `${cleanDescription} (Cuota ${i}/${totalInstallments})`,
-                            monto: parseFloat(item.monto),
-                            dueDate: installmentDate.toISOString(),
-                        });
-                        existingInstallmentIds.add(installmentId);
-                    }
-                }
-            });
-
-            if (newInstallments.length > 0) {
-                futureInstallments.push(...newInstallments);
-                savePaymentsToStorage();
-            }
-
-            if (showViewAfter) {
-                renderFutureInstallmentsView();
-                showView('futureInstallmentsView');
-            }
-            
-            return newInstallments.length;
-        };
-
         const generateAndDownloadICS = () => {
             const displayDate = new Date(); displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
             const displayMonthKey = getMonthYearKey(displayDate); const [year, month] = displayMonthKey.split('-');
@@ -1037,31 +1204,13 @@
             const link = document.createElement('a'); link.href = url; link.setAttribute('download', `Vencimientos_${getMonthName(displayDate).replace(/ /g, '_')}.ics`);
             document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url);
         };
-        const exportData = () => {
-            const dataToExport = { payments: payments, futureInstallments: futureInstallments };
-            if (payments.length === 0 && futureInstallments.length === 0) return createPageNotification("No hay datos para exportar.", "info");
-            const dataStr = JSON.stringify(dataToExport, null, 2); const dataBlob = new Blob([dataStr], { type: 'application/json' }); const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a'); link.href = url; link.download = 'gestor_pagos_backup.json';
-            document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(url); createPageNotification("Datos exportados con éxito.", "success");
-        };
-        const importData = (event) => {
-            const file = event.target.files[0]; if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) throw new Error("Formato de archivo inválido.");
-                    showConfirmationModal("Esto reemplazará todos tus datos. ¿Continuar?", () => {
-                        payments = Array.isArray(data) ? data : (data.payments || []);
-                        futureInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
-                        savePaymentsToStorage(); renderAll(); createPageNotification("Datos importados con éxito.", "success");
-                    });
-                } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
-            };
-            reader.readAsText(file);
-        };
-
+        
+        // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Firebase first
+            initializeFirebase();
+
+            // All other event listeners remain the same
             themeToggleBtn.addEventListener('click', toggleTheme);
             prevMonthBtn.addEventListener('click', () => { selectedMonthOffset--; renderAll(); });
             nextMonthBtn.addEventListener('click', () => { selectedMonthOffset++; renderAll(); });
@@ -1137,12 +1286,10 @@
             apiKeyForm.addEventListener('submit', handleSaveApiKey);
             apiKeyModalCancelBtn.addEventListener('click', hideApiKeyModal);
 
-            loadPaymentsFromStorage();
             applyTheme(localStorage.getItem('theme') || 'light');
             updateNotificationsButton(); 
-            renderAll();
+            // Initial render is now triggered by the auth state change
         });
-
     </script>
 </body>
 </html>
