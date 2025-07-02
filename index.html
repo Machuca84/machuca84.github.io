@@ -175,7 +175,7 @@
     </style>
 </head>
 <body class="antialiased">
-    <!-- Contenido HTML (sin cambios, se mantiene el original) -->
+    <!-- Contenido HTML (sin cambios, se mantienen los originales) -->
     <input type="file" id="importFile" accept=".json" style="display: none;">
     <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
 
@@ -194,7 +194,7 @@
             <nav>
                 <ul class="space-y-1">
                     <li>
-                        <button id="analyzeSummaryBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="analyzeSummaryBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" />
                             </svg>
@@ -202,7 +202,7 @@
                         </button>
                     </li>
                     <li>
-                        <button id="showFutureInstallmentsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="showFutureInstallmentsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                             </svg>
@@ -210,7 +210,7 @@
                         </button>
                     </li>
                     <li>
-                        <a href="#" id="showHistoryBtn" class="flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <a href="#" id="showHistoryBtn" class="flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors opacity-50 pointer-events-none">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Historial Pagos
                         </a>
@@ -230,19 +230,19 @@
                         </button>
                     </li>
                     <li>
-                        <button id="exportDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="exportDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                             Exportar Datos
                         </button>
                     </li>
                     <li>
-                        <button id="importDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="importDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             Importar Datos
                         </button>
                     </li>
                     <li>
-                        <button id="exportCalendarBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                        <button id="exportCalendarBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             Exportar a Calendario
                         </button>
@@ -265,7 +265,8 @@
                 <div class="flex-grow text-center px-2">
                     <h1 class="font-bold whitespace-nowrap" style="font-size: clamp(1.125rem, 5.5vw, 1.5rem);">Gestor de Pagos</h1>
                 </div>
-                 <div class="flex-shrink-0 w-12 flex justify-end">
+                 <div class="flex-shrink-0 w-12 flex justify-end items-center">
+                    <div id="connectionStatus" class="text-xs text-slate-500 dark:text-slate-400 mr-2 transition-all duration-300">Conectando...</div>
                     <button id="themeToggleBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Cambiar tema">
                         <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -304,7 +305,7 @@
             <div id="notificationsArea" class="mb-6 space-y-3"></div>
 
             <div class="mb-6 text-center">
-                 <button id="toggleFormBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center">
+                 <button id="toggleFormBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
                          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
                      </svg>
@@ -443,14 +444,13 @@
         // --- START OF YOUR APP LOGIC ---
         
         // --- 1. CONFIGURACIÓN DE FIREBASE ---
-        // PEGA AQUÍ EL OBJETO 'firebaseConfig' QUE COPIASTE DE LA CONSOLA DE FIREBASE
         const firebaseConfig = {
-          apiKey: "AIzaSy...xxxxxxxx",
-          authDomain: "gestor-de-pagos-xxxx.firebaseapp.com",
-          projectId: "gestor-de-pagos-xxxx",
-          storageBucket: "gestor-de-pagos-xxxx.appspot.com",
-          messagingSenderId: "...",
-          appId: "1:...:web:..."
+            apiKey: "AIzaSyBmpLx3B-IZ4FNo8pgmSR2-0JETc8_wL64",
+            authDomain: "gestor-de-pagos-fd138.firebaseapp.com",
+            projectId: "gestor-de-pagos-fd138",
+            storageBucket: "gestor-de-pagos-fd138.appspot.com",
+            messagingSenderId: "905643052314",
+            appId: "1:905643052314:web:6001fa9c264850562770a3"
         };
 
         // Firebase references
@@ -458,6 +458,7 @@
         let userId;
         let paymentsUnsubscribe = null;
         let installmentsUnsubscribe = null;
+        let isAuthReady = false; // Flag de seguridad para la conexión
 
         // Application State
         let payments = [];
@@ -545,6 +546,7 @@
         const apiKeyForm = document.getElementById('apiKeyForm');
         const modalApiKeyInput = document.getElementById('modalApiKeyInput');
         const apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
+        const connectionStatusEl = document.getElementById('connectionStatus');
 
         // --- FIREBASE INITIALIZATION ---
         const initializeFirebase = async () => {
@@ -562,6 +564,11 @@
                     if (user) {
                         console.log("User is signed in:", user.uid);
                         userId = user.uid;
+                        isAuthReady = true; // ¡Conexión lista!
+                        
+                        // Enable UI elements that require authentication
+                        enableUI();
+
                         // User is authenticated, now we can fetch data.
                         loadAndListenForData();
                     } else {
@@ -572,6 +579,24 @@
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
                 createPageNotification(error.message, "error", "Error de Conexión");
+                if (connectionStatusEl) {
+                    connectionStatusEl.textContent = 'Error';
+                    connectionStatusEl.classList.remove('text-slate-500');
+                    connectionStatusEl.classList.add('text-red-500');
+                }
+            }
+        };
+
+        const enableUI = () => {
+            document.querySelectorAll('button:disabled, a.pointer-events-none').forEach(el => {
+                el.disabled = false;
+                el.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed', 'opacity-50', 'pointer-events-none');
+            });
+            if (connectionStatusEl) {
+                connectionStatusEl.textContent = 'Conectado';
+                connectionStatusEl.classList.remove('text-slate-500');
+                connectionStatusEl.classList.add('text-green-600', 'dark:text-green-400');
+                setTimeout(() => { connectionStatusEl.style.opacity = '0'; }, 2000);
             }
         };
 
@@ -614,7 +639,10 @@
 
         const handleAddOrUpdatePayment = async (e) => {
             e.preventDefault();
-            if (!userId) return createPageNotification("Debes estar conectado para guardar datos.", "error");
+            if (!isAuthReady) {
+                createPageNotification("Aún conectando a la base de datos. Por favor, espera un segundo e intenta de nuevo.", "warning");
+                return;
+            }
 
             const id = editingPaymentIdInput.value;
             const name = paymentNameInput.value.trim();
@@ -668,7 +696,7 @@
         };
 
         const deletePayment = async (id) => {
-            if (!userId) return;
+            if (!isAuthReady) return createPageNotification("Aún conectando a la base de datos. Por favor, espera un segundo e intenta de nuevo.", "warning");
             try {
                 const paymentRef = doc(db, 'users', userId, 'payments', id);
                 await deleteDoc(paymentRef);
@@ -681,7 +709,7 @@
         };
 
         const togglePaymentStatus = async (id, markAsPaid) => {
-            if (!userId) return;
+            if (!isAuthReady) return createPageNotification("Aún conectando a la base de datos. Por favor, espera un segundo e intenta de nuevo.", "warning");
             
             const displayDate = new Date(); 
             displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); 
@@ -708,7 +736,7 @@
         };
         
         const processExtractedPayments = async (extractedPayments, summaryYear, summaryMonth) => {
-            if (!userId) throw new Error("Usuario no autenticado.");
+            if (!isAuthReady) throw new Error("Usuario no autenticado.");
             if (!Array.isArray(extractedPayments)) {
                 console.error("Los datos extraídos no son un array:", extractedPayments);
                 return 0;
@@ -736,7 +764,7 @@
                     installmentDate.setMonth(installmentDate.getMonth() + monthsToAdd);
                     
                     const cleanDescription = item.descripcion.trim().replace(/\s+/g, ' ');
-                    const installmentId = `${cleanDescription}-${i}/${totalInstallments}`;
+                    const installmentId = `${cleanDescription}-${i}-${totalInstallments}`; // REEMPLAZA LA BARRA '/'
 
                     if (!existingInstallmentIds.has(installmentId)) {
                         const newInstallmentData = {
@@ -744,11 +772,10 @@
                             monto: parseFloat(item.monto),
                             dueDate: installmentDate.toISOString(),
                         };
-                        // Use the generated ID as the document ID for idempotency
                         const installmentDocRef = doc(installmentsCollectionRef, installmentId);
                         batch.set(installmentDocRef, newInstallmentData);
                         newInstallmentsCount++;
-                        existingInstallmentIds.add(installmentId); // Avoid adding duplicates in the same batch
+                        existingInstallmentIds.add(installmentId);
                     }
                 }
             });
@@ -757,80 +784,99 @@
                 await batch.commit();
             }
             
-            // onSnapshot will handle UI updates
             return newInstallmentsCount;
         };
 
         const importData = (event) => {
-            if (!userId) return createPageNotification("Debes estar conectado para importar datos.", "error");
+            if (!isAuthReady) {
+                createPageNotification("Aún conectando a la base de datos. Por favor, espera un segundo e intenta de nuevo.", "warning");
+                return;
+            }
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
+                    console.log("Iniciando proceso de importación...");
                     const data = JSON.parse(e.target.result);
-                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) {
-                        throw new Error("Formato de archivo inválido.");
+
+                    const isBareArray = Array.isArray(data);
+                    const isObjectWithPayments = data.payments && Array.isArray(data.payments);
+
+                    if (!isBareArray && !isObjectWithPayments) {
+                        throw new Error("El archivo de backup no tiene un formato reconocido.");
                     }
+                    console.log("Formato de archivo reconocido. Mostrando confirmación...");
 
-                    showConfirmationModal("Esto reemplazará todos tus datos en la nube. ¿Continuar?", async () => {
-                        let importedPayments = Array.isArray(data) ? data : (data.payments || []);
-                        const importedInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
+                    showConfirmationModal("Esto reemplazará todos tus datos actuales en la nube con los datos del backup. ¿Continuar?", async () => {
+                        try {
+                            console.log("Confirmación aceptada. Migrando datos...");
+                            let sourcePayments = isBareArray ? data : data.payments;
+                            const sourceInstallments = isObjectWithPayments ? (data.futureInstallments || []) : [];
 
-                        // --- LÓGICA DE MIGRACIÓN ---
-                        // Convierte los backups antiguos al nuevo formato de datos
-                        const todayMonthKey = getMonthYearKey(new Date());
-                        importedPayments = importedPayments.map(p => {
-                            // Si es un objeto del formato antiguo (detectado por la propiedad 'isPaid'), lo convierte.
-                            if (p.isPaid === true || p.isPaid === false) {
+                            const todayMonthKey = getMonthYearKey(new Date());
+                            const migratedPayments = sourcePayments.map((p, index) => {
+                                if (p.hasOwnProperty('isPaid')) {
+                                    console.log(`Migrando pago antiguo #${index}: ${p.name}`);
+                                    return {
+                                        name: p.name,
+                                        dueDate: p.dueDate,
+                                        amount: p.amount,
+                                        paidMonths: {},
+                                        amountOverrides: {},
+                                        notificationsSent: {},
+                                        createdAt: p.createdAt || todayMonthKey
+                                    };
+                                }
+                                console.log(`Procesando pago en formato nuevo #${index}: ${p.name}`);
                                 return {
-                                    name: p.name,
-                                    dueDate: p.dueDate,
-                                    amount: p.amount,
-                                    paidMonths: {}, // Se reinicia, ya que no podemos saber de qué mes era el pago.
-                                    amountOverrides: {},
-                                    notificationsSent: {},
-                                    createdAt: p.createdAt || todayMonthKey // Añade una fecha de creación si no existe.
+                                    name: p.name || 'Pago sin nombre',
+                                    dueDate: p.dueDate || 1,
+                                    amount: p.hasOwnProperty('amount') ? p.amount : null,
+                                    paidMonths: p.paidMonths || {},
+                                    amountOverrides: p.amountOverrides || {},
+                                    notificationsSent: p.notificationsSent || {},
+                                    createdAt: p.createdAt || todayMonthKey
                                 };
-                            }
-                            // Si ya está en el formato nuevo, solo se asegura de que todos los campos existan.
-                            return {
-                                ...p,
-                                paidMonths: p.paidMonths || {},
-                                amountOverrides: p.amountOverrides || {},
-                                notificationsSent: p.notificationsSent || {},
-                                createdAt: p.createdAt || todayMonthKey
-                            };
-                        });
-                        // --- FIN DE LA LÓGICA DE MIGRACIÓN ---
+                            });
+                            console.log(`Migración completada. ${migratedPayments.length} pagos listos para ser subidos.`);
 
-                        const batch = writeBatch(db);
+                            const batch = writeBatch(db);
 
-                        // Borra los datos existentes para una importación limpia
-                        const paymentsQuery = await getDocs(collection(db, 'users', userId, 'payments'));
-                        paymentsQuery.forEach(doc => batch.delete(doc.ref));
-                        const installmentsQuery = await getDocs(collection(db, 'users', userId, 'futureInstallments'));
-                        installmentsQuery.forEach(doc => batch.delete(doc.ref));
+                            console.log("Borrando datos antiguos de la nube...");
+                            const paymentsQuery = await getDocs(collection(db, 'users', userId, 'payments'));
+                            paymentsQuery.forEach(doc => batch.delete(doc.ref));
+                            const installmentsQuery = await getDocs(collection(db, 'users', userId, 'futureInstallments'));
+                            installmentsQuery.forEach(doc => batch.delete(doc.ref));
+                            console.log("Datos antiguos marcados para borrar.");
 
-                        // Añade los nuevos datos migrados
-                        const paymentsCollectionRef = collection(db, 'users', userId, 'payments');
-                        importedPayments.forEach(p => {
-                            const { id, ...paymentData } = p; // Quita el ID antiguo si existe
-                            batch.set(doc(paymentsCollectionRef), paymentData);
-                        });
+                            console.log("Agregando nuevos datos al batch...");
+                            const paymentsCollectionRef = collection(db, 'users', userId, 'payments');
+                            migratedPayments.forEach(p => {
+                                const { id, ...paymentData } = p;
+                                batch.set(doc(paymentsCollectionRef), paymentData);
+                            });
 
-                        const installmentsCollectionRef = collection(db, 'users', userId, 'futureInstallments');
-                        importedInstallments.forEach(i => {
-                            const { id, ...installmentData } = i;
-                            batch.set(doc(installmentsCollectionRef, id || crypto.randomUUID()), installmentData);
-                        });
+                            const installmentsCollectionRef = collection(db, 'users', userId, 'futureInstallments');
+                            sourceInstallments.forEach(i => {
+                                const { id, ...installmentData } = i;
+                                const sanitizedId = (id || crypto.randomUUID()).replace(/\//g, '-'); // REEMPLAZA LA BARRA '/'
+                                batch.set(doc(installmentsCollectionRef, sanitizedId), installmentData);
+                            });
+                            console.log("Nuevos datos agregados. Ejecutando batch...");
 
-                        await batch.commit();
-                        createPageNotification("Datos importados con éxito a la nube.", "success");
+                            await batch.commit();
+                            console.log("¡Batch completado! Importación exitosa.");
+                            createPageNotification("Datos importados con éxito a la nube.", "success");
+
+                        } catch (batchError) {
+                            console.error("Error durante la escritura en la base de datos:", batchError);
+                            createPageNotification("Ocurrió un error al guardar los datos en la nube.", "error");
+                        }
                     });
-                } catch (error) {
-                    console.error("Error al importar:", error);
-                    createPageNotification(`Error al leer el archivo: ${error.message}`, "error");
+                } catch (parseError) {
+                    console.error("Error al leer o parsear el archivo:", parseError);
+                    createPageNotification(`Error al leer el archivo: ${parseError.message}`, "error");
                 } finally {
                     importFileEl.value = '';
                 }
