@@ -438,28 +438,20 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- START OF YOUR APP LOGIC ---
         
         // --- 1. CONFIGURACIÓN DE FIREBASE ---
         // PEGA AQUÍ EL OBJETO 'firebaseConfig' QUE COPIASTE DE LA CONSOLA DE FIREBASE
-        // Ejemplo:
-        // const firebaseConfig = {
-        //   apiKey: "...",
-        //   authDomain: "...",
-        //   projectId: "...",
-        //   ...
-        // };
         const firebaseConfig = {
-  apiKey: "AIzaSy...xxxxxxxx",
-  authDomain: "gestor-de-pagos-xxxx.firebaseapp.com",
-  projectId: "gestor-de-pagos-xxxx",
-  storageBucket: "gestor-de-pagos-xxxx.appspot.com",
-  messagingSenderId: "...",
-  appId: "1:...:web:..."
-};
-         // ¡REEMPLAZA ESTO!
+          apiKey: "AIzaSy...xxxxxxxx",
+          authDomain: "gestor-de-pagos-xxxx.firebaseapp.com",
+          projectId: "gestor-de-pagos-xxxx",
+          storageBucket: "gestor-de-pagos-xxxx.appspot.com",
+          messagingSenderId: "...",
+          appId: "1:...:web:..."
+        };
 
         // Firebase references
         let db, auth;
@@ -771,41 +763,77 @@
 
         const importData = (event) => {
             if (!userId) return createPageNotification("Debes estar conectado para importar datos.", "error");
-            const file = event.target.files[0]; if (!file) return;
+            const file = event.target.files[0];
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = (e) => {
                 try {
                     const data = JSON.parse(e.target.result);
-                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) throw new Error("Formato de archivo inválido.");
-                    
+                    if (!((data.payments && Array.isArray(data.payments)) || Array.isArray(data))) {
+                        throw new Error("Formato de archivo inválido.");
+                    }
+
                     showConfirmationModal("Esto reemplazará todos tus datos en la nube. ¿Continuar?", async () => {
-                        const importedPayments = Array.isArray(data) ? data : (data.payments || []);
+                        let importedPayments = Array.isArray(data) ? data : (data.payments || []);
                         const importedInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
+
+                        // --- LÓGICA DE MIGRACIÓN ---
+                        // Convierte los backups antiguos al nuevo formato de datos
+                        const todayMonthKey = getMonthYearKey(new Date());
+                        importedPayments = importedPayments.map(p => {
+                            // Si es un objeto del formato antiguo (detectado por la propiedad 'isPaid'), lo convierte.
+                            if (p.isPaid === true || p.isPaid === false) {
+                                return {
+                                    name: p.name,
+                                    dueDate: p.dueDate,
+                                    amount: p.amount,
+                                    paidMonths: {}, // Se reinicia, ya que no podemos saber de qué mes era el pago.
+                                    amountOverrides: {},
+                                    notificationsSent: {},
+                                    createdAt: p.createdAt || todayMonthKey // Añade una fecha de creación si no existe.
+                                };
+                            }
+                            // Si ya está en el formato nuevo, solo se asegura de que todos los campos existan.
+                            return {
+                                ...p,
+                                paidMonths: p.paidMonths || {},
+                                amountOverrides: p.amountOverrides || {},
+                                notificationsSent: p.notificationsSent || {},
+                                createdAt: p.createdAt || todayMonthKey
+                            };
+                        });
+                        // --- FIN DE LA LÓGICA DE MIGRACIÓN ---
 
                         const batch = writeBatch(db);
 
-                        // Delete existing data (optional, but good for a clean import)
-                        payments.forEach(p => batch.delete(doc(db, 'users', userId, 'payments', p.id)));
-                        futureInstallments.forEach(i => batch.delete(doc(db, 'users', userId, 'futureInstallments', i.id)));
+                        // Borra los datos existentes para una importación limpia
+                        const paymentsQuery = await getDocs(collection(db, 'users', userId, 'payments'));
+                        paymentsQuery.forEach(doc => batch.delete(doc.ref));
+                        const installmentsQuery = await getDocs(collection(db, 'users', userId, 'futureInstallments'));
+                        installmentsQuery.forEach(doc => batch.delete(doc.ref));
 
-                        // Add new data
+                        // Añade los nuevos datos migrados
                         const paymentsCollectionRef = collection(db, 'users', userId, 'payments');
                         importedPayments.forEach(p => {
-                            const { id, ...paymentData } = p; // Don't store the old ID
+                            const { id, ...paymentData } = p; // Quita el ID antiguo si existe
                             batch.set(doc(paymentsCollectionRef), paymentData);
                         });
 
                         const installmentsCollectionRef = collection(db, 'users', userId, 'futureInstallments');
                         importedInstallments.forEach(i => {
-                             const { id, ...installmentData } = i;
-                             batch.set(doc(installmentsCollectionRef, id), installmentData); // Use the original ID for installments
+                            const { id, ...installmentData } = i;
+                            batch.set(doc(installmentsCollectionRef, id || crypto.randomUUID()), installmentData);
                         });
 
                         await batch.commit();
                         createPageNotification("Datos importados con éxito a la nube.", "success");
-                        // onSnapshot will refresh the UI
                     });
-                } catch (error) { createPageNotification(`Error al leer el archivo: ${error.message}`, "error"); } finally { importFileEl.value = ''; }
+                } catch (error) {
+                    console.error("Error al importar:", error);
+                    createPageNotification(`Error al leer el archivo: ${error.message}`, "error");
+                } finally {
+                    importFileEl.value = '';
+                }
             };
             reader.readAsText(file);
         };
