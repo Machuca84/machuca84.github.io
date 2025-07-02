@@ -15,7 +15,6 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f4f8; 
-            /* Fondo degradado sutil para el efecto Glassmorphism */
             background-image: linear-gradient(to top, #f3e7e9 0%, #e3eeff 99%, #e3eeff 100%);
             color: #1f2937; 
             overscroll-behavior-x: none; 
@@ -29,11 +28,10 @@
             color: #f3f4f6; 
         }
 
-        /* Estilo Glassmorphism para las tarjetas de pago */
         .payment-item { 
             position: relative; 
             overflow: hidden; 
-            border-radius: 1rem; /* Bordes más redondeados */
+            border-radius: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.2);
             background-color: rgba(255, 255, 255, 0.5);
             -webkit-backdrop-filter: blur(10px);
@@ -42,7 +40,7 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .dark .payment-item {
-            background-color: rgba(55, 65, 81, 0.5); /* #374151 con alpha */
+            background-color: rgba(55, 65, 81, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
         }
@@ -54,22 +52,14 @@
             box-shadow: 0 12px 40px -10px rgba(0,0,0,0.5);
         }
 
-        /* Animación para la entrada de nuevos elementos */
         @keyframes slideInFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .payment-item-animate-in {
             animation: slideInFadeIn 0.5s ease-out forwards;
         }
         
-        /* --- ESTILOS ANTERIORES (con ajustes menores) --- */
         body.menu-is-open, body.modal-is-open {
             overflow: hidden;
         }
@@ -121,7 +111,7 @@
 
         .payment-item-content {
             transition: transform 0.2s ease-out; touch-action: pan-y;
-            position: relative; z-index: 2; background: transparent; /* Ajustado para Glassmorphism */
+            position: relative; z-index: 2; background: transparent;
         }
         .swipe-action-background {
             position: absolute; top: 0; bottom: 0; width: 100%;
@@ -149,6 +139,7 @@
         #longPressModal, #confirmationModal, #apiKeyModal { z-index: 60; }
         #loadingModal { z-index: 70; }
         #loadingScreen { z-index: 80; }
+        #exitToast { z-index: 90; }
 
 
         #longPressModal {
@@ -209,9 +200,26 @@
             animation: spin 1s ease infinite;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #exitToast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            transition: bottom 0.3s ease-in-out;
+        }
+        #exitToast.show {
+            bottom: 30px;
+        }
     </style>
 </head>
 <body class="antialiased">
+    <!-- Pantalla de Carga Inicial -->
     <div id="loadingScreen" class="fixed inset-0 flex flex-col justify-center items-center bg-slate-100 dark:bg-slate-900">
         <svg class="w-20 h-20 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 3V9" />
@@ -219,6 +227,7 @@
         <p class="mt-4 text-slate-600 dark:text-slate-300">Cargando Gestor de Pagos...</p>
     </div>
 
+    <!-- Contenido Principal (oculto por defecto) -->
     <div id="pageContent" class="hidden">
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
@@ -345,6 +354,7 @@
                     </div>
                 </header>
                 
+                <!-- Auth Wall -->
                 <div id="authWall" class="text-center py-10 hidden">
                     <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Bienvenido al Gestor de Pagos</h2>
                     <p class="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">Para guardar tus datos de forma segura y sincronizarlos, inicia sesión con tu cuenta de Google.</p>
@@ -354,6 +364,7 @@
                     </button>
                 </div>
 
+                <!-- Main App Content (hidden until signed in) -->
                 <div id="appContent" class="hidden">
                     <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
                         <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
@@ -460,6 +471,7 @@
                 </div>
             </div>
             
+            <!-- Vista de Ajustes de Notificaciones -->
             <div id="notificationSettingsView" class="view-container hidden p-4 sm:p-6 md:p-8">
                 <div class="max-w-3xl mx-auto">
                     <div class="flex justify-between items-center mb-6">
@@ -571,7 +583,9 @@
             </div>
         </div>
     </div>
+    <div id="exitToast">Presiona de nuevo para salir</div>
 
+    <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -611,6 +625,8 @@
         let _confirmationCallback = null; 
         let installmentsChartInstance = null;
         let wasAnalyzing = false;
+        let backPressToastTimer = null;
+        let canExitApp = false;
 
         // Swipe State
         let swipeState = {
@@ -620,89 +636,95 @@
         const SWIPE_THRESHOLD = 60; 
         const MOVE_THRESHOLD = 10; 
 
-        // DOM Elements
-        const htmlEl = document.documentElement;
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        const sunIcon = document.getElementById('sunIcon');
-        const moonIcon = document.getElementById('moonIcon');
-        const paymentNameInput = document.getElementById('paymentName');
-        const paymentDayInput = document.getElementById('paymentDay');
-        const paymentAmountInput = document.getElementById('paymentAmount');
-        const paymentsListEl = document.getElementById('paymentsList');
-        const notificationsAreaEl = document.getElementById('notificationsArea');
-        const totalAmountDisplayEl = document.getElementById('totalAmountDisplay');
-        const pendingAmountDisplayEl = document.getElementById('pendingAmountDisplay');
-        const toggleFormBtn = document.getElementById('toggleFormBtn');
-        const toggleFormBtnText = document.getElementById('toggleFormBtnText');
-        const addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
-        const addPaymentForm = document.getElementById('addPaymentForm');
-        const cancelAddBtn = document.getElementById('cancelAddBtn');
-        const addEditButtonTextEl = document.getElementById('addEditButtonText');
-        const formTitleEl = document.getElementById('formTitle');
-        const editingPaymentIdInput = document.getElementById('editingPaymentId');
-        const prevMonthBtn = document.getElementById('prevMonthBtn');
-        const nextMonthBtn = document.getElementById('nextMonthBtn');
-        const displayedMonthLabelEl = document.getElementById('displayedMonthLabel');
-        const paymentsListTitleEl = document.getElementById('paymentsListTitle');
-        const summaryTotalLabelEl = document.getElementById('summaryTotalLabel');
-        const summaryPendingLabelEl = document.getElementById('summaryPendingLabel');
-        const longPressModalEl = document.getElementById('longPressModal');
-        const modalItemNameEl = document.getElementById('modalItemName');
-        const modalEditBtn = document.getElementById('modalEditBtn');
-        const modalDeleteBtn = document.getElementById('modalDeleteBtn');
-        const modalCancelBtn = document.getElementById('modalCancelBtn');
-        const confirmationModalEl = document.getElementById('confirmationModal');
-        const confirmationModalMessageEl = document.getElementById('confirmationModalMessage');
-        const confirmationModalCancelBtn = document.getElementById('confirmationModalCancelBtn');
-        const confirmationModalConfirmBtn = document.getElementById('confirmationModalConfirmBtn');
-        const hamburgerBtn = document.getElementById('hamburgerBtn');
-        const sideMenu = document.getElementById('sideMenu');
-        const menuOverlay = document.getElementById('menuOverlay');
-        const closeMenuBtn = document.getElementById('closeMenuBtn');
-        const showHistoryBtn = document.getElementById('showHistoryBtn');
-        const historyView = document.getElementById('historyView');
-        const closeHistoryBtn = document.getElementById('closeHistoryBtn');
-        const historicalPaymentsListContainerEl = document.getElementById('historicalPaymentsListContainer');
-        const mainContentEl = document.getElementById('mainContent');
-        const exportDataBtn = document.getElementById('exportDataBtn');
-        const importDataBtn = document.getElementById('importDataBtn');
-        const importFileEl = document.getElementById('importFile');
-        const exportCalendarBtn = document.getElementById('exportCalendarBtn');
-        const analyzeSummaryBtn = document.getElementById('analyzeSummaryBtn');
-        const summaryFileEl = document.getElementById('summaryFile');
-        const loadingModalEl = document.getElementById('loadingModal');
-        const loadingModalText = document.getElementById('loadingModalText');
-        const showFutureInstallmentsBtn = document.getElementById('showFutureInstallmentsBtn');
-        const futureInstallmentsView = document.getElementById('futureInstallmentsView');
-        const closeFutureInstallmentsBtn = document.getElementById('closeFutureInstallmentsBtn');
-        const futureInstallmentsListContainerEl = document.getElementById('futureInstallmentsListContainer');
-        const installmentsChartEl = document.getElementById('installmentsChart');
-        const enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
-        const notificationsBtnText = document.getElementById('notificationsBtnText');
-        const modifyApiKeyBtn = document.getElementById('modifyApiKeyBtn');
-        const apiKeyModal = document.getElementById('apiKeyModal');
-        const apiKeyForm = document.getElementById('apiKeyForm');
-        const modalApiKeyInput = document.getElementById('modalApiKeyInput');
-        const apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
-        const authWall = document.getElementById('authWall');
-        const appContent = document.getElementById('appContent');
-        const signInBtn = document.getElementById('signInBtn');
-        const signOutBtn = document.getElementById('signOutBtn');
-        const userInfo = document.getElementById('userInfo');
-        const userPhoto = document.getElementById('userPhoto');
-        const userName = document.getElementById('userName');
-        const userEmail = document.getElementById('userEmail');
-        const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
-        const notificationSettingsView = document.getElementById('notificationSettingsView');
-        const closeNotificationSettingsBtn = document.getElementById('closeNotificationSettingsBtn');
-        const notificationSettingsForm = document.getElementById('notificationSettingsForm');
-        const notificationTime = document.getElementById('notificationTime');
-        const notifyDayBefore = document.getElementById('notifyDayBefore');
-        const notifyOnDueDate = document.getElementById('notifyOnDueDate');
-        const remindIfPending = document.getElementById('remindIfPending');
-        const loadingScreen = document.getElementById('loadingScreen');
-        const pageContent = document.getElementById('pageContent');
-        const testNotificationBtn = document.getElementById('testNotificationBtn');
+        // --- DOM ELEMENT DECLARATIONS ---
+        // Moved inside DOMContentLoaded to prevent race conditions
+        let htmlEl, themeToggleBtn, sunIcon, moonIcon, paymentNameInput, paymentDayInput, paymentAmountInput, paymentsListEl, notificationsAreaEl, totalAmountDisplayEl, pendingAmountDisplayEl, toggleFormBtn, toggleFormBtnText, addPaymentFormContainer, addPaymentForm, cancelAddBtn, addEditButtonTextEl, formTitleEl, editingPaymentIdInput, prevMonthBtn, nextMonthBtn, displayedMonthLabelEl, paymentsListTitleEl, summaryTotalLabelEl, summaryPendingLabelEl, longPressModalEl, modalItemNameEl, modalEditBtn, modalDeleteBtn, modalCancelBtn, confirmationModalEl, confirmationModalMessageEl, confirmationModalCancelBtn, confirmationModalConfirmBtn, hamburgerBtn, sideMenu, menuOverlay, closeMenuBtn, showHistoryBtn, historyView, closeHistoryBtn, historicalPaymentsListContainerEl, mainContentEl, exportDataBtn, importDataBtn, importFileEl, exportCalendarBtn, analyzeSummaryBtn, summaryFileEl, loadingModalEl, loadingModalText, showFutureInstallmentsBtn, futureInstallmentsView, closeFutureInstallmentsBtn, futureInstallmentsListContainerEl, installmentsChartEl, enableNotificationsBtn, notificationsBtnText, modifyApiKeyBtn, apiKeyModal, apiKeyForm, modalApiKeyInput, apiKeyModalCancelBtn, authWall, appContent, signInBtn, signOutBtn, userInfo, userPhoto, userName, userEmail, notificationSettingsBtn, notificationSettingsView, closeNotificationSettingsBtn, notificationSettingsForm, notificationTime, notifyDayBefore, notifyOnDueDate, remindIfPending, loadingScreen, pageContent, testNotificationBtn, exitToast;
+
+        const assignDOMElements = () => {
+            htmlEl = document.documentElement;
+            themeToggleBtn = document.getElementById('themeToggleBtn');
+            sunIcon = document.getElementById('sunIcon');
+            moonIcon = document.getElementById('moonIcon');
+            paymentNameInput = document.getElementById('paymentName');
+            paymentDayInput = document.getElementById('paymentDay');
+            paymentAmountInput = document.getElementById('paymentAmount');
+            paymentsListEl = document.getElementById('paymentsList');
+            notificationsAreaEl = document.getElementById('notificationsArea');
+            totalAmountDisplayEl = document.getElementById('totalAmountDisplay');
+            pendingAmountDisplayEl = document.getElementById('pendingAmountDisplay');
+            toggleFormBtn = document.getElementById('toggleFormBtn');
+            toggleFormBtnText = document.getElementById('toggleFormBtnText');
+            addPaymentFormContainer = document.getElementById('addPaymentFormContainer');
+            addPaymentForm = document.getElementById('addPaymentForm');
+            cancelAddBtn = document.getElementById('cancelAddBtn');
+            addEditButtonTextEl = document.getElementById('addEditButtonText');
+            formTitleEl = document.getElementById('formTitle');
+            editingPaymentIdInput = document.getElementById('editingPaymentId');
+            prevMonthBtn = document.getElementById('prevMonthBtn');
+            nextMonthBtn = document.getElementById('nextMonthBtn');
+            displayedMonthLabelEl = document.getElementById('displayedMonthLabel');
+            paymentsListTitleEl = document.getElementById('paymentsListTitle');
+            summaryTotalLabelEl = document.getElementById('summaryTotalLabel');
+            summaryPendingLabelEl = document.getElementById('summaryPendingLabel');
+            longPressModalEl = document.getElementById('longPressModal');
+            modalItemNameEl = document.getElementById('modalItemName');
+            modalEditBtn = document.getElementById('modalEditBtn');
+            modalDeleteBtn = document.getElementById('modalDeleteBtn');
+            modalCancelBtn = document.getElementById('modalCancelBtn');
+            confirmationModalEl = document.getElementById('confirmationModal');
+            confirmationModalMessageEl = document.getElementById('confirmationModalMessage');
+            confirmationModalCancelBtn = document.getElementById('confirmationModalCancelBtn');
+            confirmationModalConfirmBtn = document.getElementById('confirmationModalConfirmBtn');
+            hamburgerBtn = document.getElementById('hamburgerBtn');
+            sideMenu = document.getElementById('sideMenu');
+            menuOverlay = document.getElementById('menuOverlay');
+            closeMenuBtn = document.getElementById('closeMenuBtn');
+            showHistoryBtn = document.getElementById('showHistoryBtn');
+            historyView = document.getElementById('historyView');
+            closeHistoryBtn = document.getElementById('closeHistoryBtn');
+            historicalPaymentsListContainerEl = document.getElementById('historicalPaymentsListContainer');
+            mainContentEl = document.getElementById('mainContent');
+            exportDataBtn = document.getElementById('exportDataBtn');
+            importDataBtn = document.getElementById('importDataBtn');
+            importFileEl = document.getElementById('importFile');
+            exportCalendarBtn = document.getElementById('exportCalendarBtn');
+            analyzeSummaryBtn = document.getElementById('analyzeSummaryBtn');
+            summaryFileEl = document.getElementById('summaryFile');
+            loadingModalEl = document.getElementById('loadingModal');
+            loadingModalText = document.getElementById('loadingModalText');
+            showFutureInstallmentsBtn = document.getElementById('showFutureInstallmentsBtn');
+            futureInstallmentsView = document.getElementById('futureInstallmentsView');
+            closeFutureInstallmentsBtn = document.getElementById('closeFutureInstallmentsBtn');
+            futureInstallmentsListContainerEl = document.getElementById('futureInstallmentsListContainer');
+            installmentsChartEl = document.getElementById('installmentsChart');
+            enableNotificationsBtn = document.getElementById('enableNotificationsBtn');
+            notificationsBtnText = document.getElementById('notificationsBtnText');
+            modifyApiKeyBtn = document.getElementById('modifyApiKeyBtn');
+            apiKeyModal = document.getElementById('apiKeyModal');
+            apiKeyForm = document.getElementById('apiKeyForm');
+            modalApiKeyInput = document.getElementById('modalApiKeyInput');
+            apiKeyModalCancelBtn = document.getElementById('apiKeyModalCancelBtn');
+            authWall = document.getElementById('authWall');
+            appContent = document.getElementById('appContent');
+            signInBtn = document.getElementById('signInBtn');
+            signOutBtn = document.getElementById('signOutBtn');
+            userInfo = document.getElementById('userInfo');
+            userPhoto = document.getElementById('userPhoto');
+            userName = document.getElementById('userName');
+            userEmail = document.getElementById('userEmail');
+            notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
+            notificationSettingsView = document.getElementById('notificationSettingsView');
+            closeNotificationSettingsBtn = document.getElementById('closeNotificationSettingsBtn');
+            notificationSettingsForm = document.getElementById('notificationSettingsForm');
+            notificationTime = document.getElementById('notificationTime');
+            notifyDayBefore = document.getElementById('notifyDayBefore');
+            notifyOnDueDate = document.getElementById('notifyOnDueDate');
+            remindIfPending = document.getElementById('remindIfPending');
+            loadingScreen = document.getElementById('loadingScreen');
+            pageContent = document.getElementById('pageContent');
+            testNotificationBtn = document.getElementById('testNotificationBtn');
+            exitToast = document.getElementById('exitToast');
+        };
 
         // --- FIREBASE INITIALIZATION ---
         const initializeFirebase = async () => {
@@ -1095,11 +1117,25 @@
         const showView = (viewId) => {
             document.querySelectorAll('.view-container').forEach(view => { view.classList.add('hidden'); });
             const viewToShow = document.getElementById(viewId);
-            if(viewToShow) { viewToShow.classList.remove('hidden'); }
+            if(viewToShow) { 
+                viewToShow.classList.remove('hidden'); 
+                history.pushState({ view: viewId }, '', `#${viewId}`);
+            }
         };
 
-        const openMenu = () => { document.body.classList.add('menu-is-open'); sideMenu.classList.add('open'); menuOverlay.classList.remove('hidden'); menuOverlay.style.opacity = '0.5'; };
-        const closeMenu = () => { document.body.classList.remove('menu-is-open'); sideMenu.classList.remove('open'); menuOverlay.style.opacity = '0'; setTimeout(() => { menuOverlay.classList.add('hidden'); }, 300); };
+        const openMenu = () => { 
+            document.body.classList.add('menu-is-open'); 
+            sideMenu.classList.add('open'); 
+            menuOverlay.classList.remove('hidden'); 
+            menuOverlay.style.opacity = '0.5'; 
+            history.pushState({ view: 'menu' }, '', '#menu');
+        };
+        const closeMenu = () => { 
+            document.body.classList.remove('menu-is-open'); 
+            sideMenu.classList.remove('open'); 
+            menuOverlay.style.opacity = '0'; 
+            setTimeout(() => { menuOverlay.classList.add('hidden'); }, 300); 
+        };
         
         const showApiKeyModal = (isAnalyzing = false) => {
             wasAnalyzing = isAnalyzing;
@@ -1525,13 +1561,12 @@
         
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Firebase first
+            assignDOMElements();
             initializeFirebase();
 
             signInBtn.addEventListener('click', signInWithGoogle);
             signOutBtn.addEventListener('click', signOutUser);
 
-            // All other event listeners remain the same
             themeToggleBtn.addEventListener('click', toggleTheme);
             prevMonthBtn.addEventListener('click', () => { selectedMonthOffset--; renderAll(); });
             nextMonthBtn.addEventListener('click', () => { selectedMonthOffset++; renderAll(); });
@@ -1585,11 +1620,17 @@
             longPressModalEl.addEventListener('click', (e) => { if (e.target === longPressModalEl) closeLongPressModal(); });
             confirmationModalConfirmBtn.addEventListener('click', () => { if (typeof _confirmationCallback === 'function') _confirmationCallback(); hideConfirmationModal(); });
             confirmationModalCancelBtn.addEventListener('click', hideConfirmationModal);
-            hamburgerBtn.addEventListener('click', openMenu); closeMenuBtn.addEventListener('click', closeMenu); menuOverlay.addEventListener('click', closeMenu);
-            closeHistoryBtn.addEventListener('click', () => showView('mainContent'));
-            closeFutureInstallmentsBtn.addEventListener('click', () => showView('mainContent'));
+            hamburgerBtn.addEventListener('click', openMenu);
+            closeMenuBtn.addEventListener('click', () => history.back());
+            menuOverlay.addEventListener('click', () => history.back());
+            closeHistoryBtn.addEventListener('click', () => history.back());
+            closeFutureInstallmentsBtn.addEventListener('click', () => history.back());
+            closeNotificationSettingsBtn.addEventListener('click', () => history.back());
+            
             showHistoryBtn.addEventListener('click', (e) => { e.preventDefault(); renderHistory(); showView('historyView'); closeMenu(); });
             showFutureInstallmentsBtn.addEventListener('click', (e) => { e.preventDefault(); renderFutureInstallmentsView(); showView('futureInstallmentsView'); closeMenu(); });
+            notificationSettingsBtn.addEventListener('click', () => { showView('notificationSettingsView'); closeMenu(); });
+            
             exportDataBtn.addEventListener('click', exportData);
             importDataBtn.addEventListener('click', () => importFileEl.click());
             importFileEl.addEventListener('change', importData);
@@ -1606,15 +1647,6 @@
             modifyApiKeyBtn.addEventListener('click', () => { showApiKeyModal(false); closeMenu(); });
             apiKeyForm.addEventListener('submit', handleSaveApiKey);
             apiKeyModalCancelBtn.addEventListener('click', hideApiKeyModal);
-
-            notificationSettingsBtn.addEventListener('click', () => {
-                showView('notificationSettingsView');
-                closeMenu();
-            });
-
-            closeNotificationSettingsBtn.addEventListener('click', () => {
-                showView('mainContent');
-            });
 
             notificationSettingsForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -1634,7 +1666,7 @@
                     const userDocRef = doc(db, 'users', userId);
                     await setDoc(userDocRef, { notificationSettings: settings }, { merge: true });
                     createPageNotification("Ajustes de notificación guardados con éxito.", "success");
-                    showView('mainContent');
+                    history.back();
                 } catch (error) {
                     console.error("Error saving notification settings:", error);
                     createPageNotification("No se pudieron guardar los ajustes.", "error");
@@ -1651,6 +1683,27 @@
                     });
                 } else {
                     createPageNotification("El permiso para notificaciones no está activado.", "warning");
+                }
+            });
+
+            window.addEventListener('popstate', (event) => {
+                closeMenu();
+                if (document.body.classList.contains('modal-is-open')) {
+                    hideApiKeyModal();
+                    hideConfirmationModal();
+                } else if (!historyView.classList.contains('hidden') || !futureInstallmentsView.classList.contains('hidden') || !notificationSettingsView.classList.contains('hidden')) {
+                    showView('mainContent');
+                } else if (authWall.classList.contains('hidden')) { // Only handle exit on main screen
+                    if (canExitApp) {
+                        window.close(); // This might not work on all browsers, but it's the standard attempt
+                    } else {
+                        canExitApp = true;
+                        exitToast.classList.add('show');
+                        backPressToastTimer = setTimeout(() => {
+                            exitToast.classList.remove('show');
+                            canExitApp = false;
+                        }, 2000);
+                    }
                 }
             });
 
