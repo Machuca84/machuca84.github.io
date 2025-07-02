@@ -596,19 +596,24 @@
                 auth = getAuth(app);
 
                 onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        console.log("User is signed in:", user.uid);
+                    // This is the key change: only proceed if the user exists and is NOT anonymous.
+                    if (user && !user.isAnonymous) {
+                        console.log("User is signed in with Google:", user.uid);
                         userId = user.uid;
                         isAuthReady = true;
                         
                         updateUIForUser(user);
                         loadAndListenForData();
                     } else {
-                        console.log("User is signed out.");
+                        // For any other case (no user, or anonymous user), show the login wall.
+                        console.log("User is signed out or anonymous. Showing login wall.");
                         userId = null;
                         isAuthReady = false;
                         updateUIForUser(null);
-                        // Clear local data when signed out
+                        
+                        // Clear local data and unsubscribe from listeners to prevent errors.
+                        if (paymentsUnsubscribe) paymentsUnsubscribe();
+                        if (installmentsUnsubscribe) installmentsUnsubscribe();
                         payments = [];
                         futureInstallments = [];
                         renderAll();
@@ -652,8 +657,6 @@
             try {
                 await signOut(auth);
                 // onAuthStateChanged will handle UI changes
-                if (paymentsUnsubscribe) paymentsUnsubscribe();
-                if (installmentsUnsubscribe) installmentsUnsubscribe();
                 closeMenu();
             } catch (error) {
                 console.error("Error during sign-out:", error);
