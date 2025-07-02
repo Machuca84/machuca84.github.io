@@ -1,107 +1,90 @@
-// sw.js
+// Importamos los scripts de Firebase (versión compat, para Service Workers)
+importScripts("https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging-compat.js");
 
-const CACHE_NAME = 'gestor-pagos-cache-v1';
+// --- LÓGICA DE CACHÉ (PARA FUNCIONAMIENTO OFFLINE) ---
+
+const CACHE_NAME = 'gestor-pagos-cache-v2'; // Versión del caché
 const APP_SHELL_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
   'https://cdn.tailwindcss.com',
   'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+  '/images/icon-192x192.png',
+  '/images/icon-512x512.png'
 ];
 
-// Evento 'install': Se dispara cuando el Service Worker se instala.
-// Aquí cacheamos el "App Shell", es decir, los archivos básicos para que la app funcione.
+// Evento 'install': Se cachean los archivos básicos de la app.
 self.addEventListener('install', event => {
-  console.log('Service Worker: Instalado');
+  console.log('[SW] Instalando...');
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      console.log('Service Worker: Cacheando el App Shell');
-      // Usamos addAll para cachear todos los recursos básicos.
-      // Si uno falla, la instalación del SW falla.
+      console.log('[SW] Cacheando el App Shell');
       return cache.addAll(APP_SHELL_URLS);
     })
   );
-  // Forzar al nuevo Service Worker a activarse inmediatamente.
-  self.skipWaiting();
 });
 
-// Evento 'activate': Se dispara cuando el Service Worker se activa.
-// Aquí limpiamos cachés antiguas para evitar conflictos.
+// Evento 'activate': Se limpia el caché antiguo.
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Activado');
+  console.log('[SW] Activado.');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
         cacheNames.map(cacheName => {
-          // Si el nombre del caché no es el actual, lo eliminamos.
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Limpiando caché antigua:', cacheName);
+            console.log('[SW] Limpiando caché antigua:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
-  // Reclama el control de todos los clientes (pestañas) abiertos.
   return self.clients.claim();
 });
 
-// Evento 'fetch': Se dispara cada vez que la aplicación realiza una petición de red (fetch).
-// Aquí interceptamos las peticiones para servirlas desde el caché si es posible.
+// Evento 'fetch': Se interceptan las peticiones para servirlas desde el caché.
 self.addEventListener('fetch', event => {
-  // Ignoramos las peticiones a la API de Google Gemini para que siempre vayan a la red.
-  if (event.request.url.startsWith('https://generativelanguage.googleapis.com')) {
-    return;
+  if (event.request.url.startsWith('https://generativelanguage.googleapis.com') || event.request.url.startsWith('https://firestore.googleapis.com')) {
+    return; // No cachear las peticiones a las APIs de Google.
   }
   
-  // Ignoramos las peticiones que no son GET.
-  if (event.request.method !== 'GET') {
-      return;
-  }
-
-  // Estrategia "Stale-While-Revalidate" (Rancio mientras se revalida).
-  // 1. Responde inmediatamente con el recurso del caché si está disponible (rapidez).
-  // 2. Mientras tanto, busca una versión actualizada en la red.
-  // 3. Si la encuentra, actualiza el caché para la próxima vez.
   event.respondWith(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.match(event.request).then(response => {
-        const fetchPromise = fetch(event.request).then(networkResponse => {
-          // Si la petición a la red es exitosa, la guardamos en el caché y la retornamos.
-          cache.put(event.request, networkResponse.clone());
-          return networkResponse;
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request).then(fetchResponse => {
+        return caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, fetchResponse.clone());
+          return fetchResponse;
         });
-
-        // Retornamos la respuesta del caché inmediatamente si existe,
-        // o esperamos a la respuesta de la red si no está en caché.
-        return response || fetchPromise;
       });
     })
   );
 });
 
+// --- LÓGICA DE NOTIFICACIONES PUSH (EN SEGUNDO PLANO) ---
 
-// Evento 'notificationclick': Se dispara cuando el usuario hace clic en una notificación.
-self.addEventListener('notificationclick', event => {
-  console.log('Service Worker: Clic en notificación recibido.');
+const firebaseConfig = {
+    apiKey: "AIzaSyBmpLx3B-IZ4FNo8pgmSR2-0JETc8_wL64",
+    authDomain: "gestor-de-pagos-fd138.firebaseapp.com",
+    projectId: "gestor-de-pagos-fd138",
+    storageBucket: "gestor-de-pagos-fd138.appspot.com",
+    messagingSenderId: "905643052314",
+    appId: "1:905643052314:web:6001fa9c264850562770a3"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+messaging.onBackgroundMessage((payload) => {
+  console.log('[SW] Mensaje en segundo plano recibido: ', payload);
   
-  // Cierra la notificación
-  event.notification.close();
+  const notificationTitle = payload.notification.title;
+  const notificationOptions = {
+    body: payload.notification.body,
+    icon: payload.notification.icon || '/images/icon-192x192.png'
+  };
 
-  // Abre la aplicación o la enfoca si ya está abierta.
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
-      // Si hay una ventana de la app abierta, la enfoca.
-      for (const client of clientList) {
-        if ('focus' in client) {
-          return client.focus();
-        }
-      }
-      // Si no hay ninguna ventana abierta, abre una nueva.
-      if (clients.openWindow) {
-        return clients.openWindow('/'); 
-      }
-    })
-  );
+  self.registration.showNotification(notificationTitle, notificationOptions);
 });
