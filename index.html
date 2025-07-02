@@ -43,7 +43,7 @@
         .dark .border-b { border-color: #4b5563; }
         .dark .payment-item { background-color: #374151; }
         
-        .dark #historyView, .dark #futureInstallmentsView { background-color: #1e293b; } 
+        .dark #historyView, .dark #futureInstallmentsView, .dark #notificationSettingsView { background-color: #1e293b; } 
         .dark .history-month-card { background-color: #334155; border-color: #4b5563;} 
         .dark .history-month-card h3 { color: #c7d2fe; } 
         .dark .history-item { border-color: #4b5563;} 
@@ -53,13 +53,14 @@
 
         .dark input[type="text"],
         .dark input[type="number"],
-        .dark input[type="password"] {
+        .dark input[type="password"],
+        .dark select {
             color: #e5e7eb; 
             background-color: #4b5563; 
             border-color: #6b7280;
         }
         .dark input::placeholder { color: #9ca3af; }
-        input[type="text"], input[type="number"], input[type="password"] { color: #1f2937; }
+        input[type="text"], input[type="number"], input[type="password"], select { color: #1f2937; }
 
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #f1f1f1; }
@@ -154,7 +155,7 @@
             transition: opacity 0.3s ease-in-out;
             position: fixed; inset: 0;
         }
-        #historyView, #futureInstallmentsView {
+        #historyView, #futureInstallmentsView, #notificationSettingsView {
             position: fixed; inset: 0; overflow-y: auto;
             background-color: #f0f4f8; 
         }
@@ -231,6 +232,15 @@
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             Historial Pagos
                         </a>
+                    </li>
+                    <li>
+                        <button id="notificationSettingsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            Ajustes de Notificaciones
+                        </button>
                     </li>
                     <li>
                         <button id="enableNotificationsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
@@ -410,6 +420,65 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Vista de Ajustes de Notificaciones -->
+        <div id="notificationSettingsView" class="view-container hidden p-4 sm:p-6 md:p-8">
+            <div class="max-w-3xl mx-auto">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Ajustes de Notificaciones</h1>
+                    <button id="closeNotificationSettingsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                        Cerrar
+                    </button>
+                </div>
+                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6">
+                    <form id="notificationSettingsForm" class="space-y-6">
+                        <div>
+                            <label for="notificationTime" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Hora del recordatorio principal</label>
+                            <select id="notificationTime" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="09:00">09:00 AM</option>
+                                <option value="12:00">12:00 PM</option>
+                                <option value="18:00">06:00 PM</option>
+                            </select>
+                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Elige la hora en que prefieres recibir los avisos de vencimiento.</p>
+                        </div>
+                        
+                        <div class="relative flex items-start">
+                            <div class="flex h-6 items-center">
+                                <input id="notifyDayBefore" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            </div>
+                            <div class="ml-3 text-sm leading-6">
+                                <label for="notifyDayBefore" class="font-medium text-gray-900 dark:text-gray-100">Avisar el día anterior</label>
+                                <p class="text-gray-500 dark:text-gray-400">Recibir una notificación un día antes del vencimiento.</p>
+                            </div>
+                        </div>
+
+                        <div class="relative flex items-start">
+                            <div class="flex h-6 items-center">
+                                <input id="notifyOnDueDate" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            </div>
+                            <div class="ml-3 text-sm leading-6">
+                                <label for="notifyOnDueDate" class="font-medium text-gray-900 dark:text-gray-100">Avisar el día del vencimiento</label>
+                                <p class="text-gray-500 dark:text-gray-400">Recibir la notificación principal el día que vence el pago.</p>
+                            </div>
+                        </div>
+
+                        <div class="relative flex items-start">
+                            <div class="flex h-6 items-center">
+                                <input id="remindIfPending" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                            </div>
+                            <div class="ml-3 text-sm leading-6">
+                                <label for="remindIfPending" class="font-medium text-gray-900 dark:text-gray-100">Insistir si está pendiente</label>
+                                <p class="text-gray-500 dark:text-gray-400">Recibir recordatorios adicionales si no has marcado el pago como realizado.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg">Guardar Ajustes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
 
@@ -468,7 +537,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
 
         // --- START OF YOUR APP LOGIC ---
@@ -584,6 +653,14 @@
         const userPhoto = document.getElementById('userPhoto');
         const userName = document.getElementById('userName');
         const userEmail = document.getElementById('userEmail');
+        const notificationSettingsBtn = document.getElementById('notificationSettingsBtn');
+        const notificationSettingsView = document.getElementById('notificationSettingsView');
+        const closeNotificationSettingsBtn = document.getElementById('closeNotificationSettingsBtn');
+        const notificationSettingsForm = document.getElementById('notificationSettingsForm');
+        const notificationTime = document.getElementById('notificationTime');
+        const notifyDayBefore = document.getElementById('notifyDayBefore');
+        const notifyOnDueDate = document.getElementById('notifyOnDueDate');
+        const remindIfPending = document.getElementById('remindIfPending');
 
         // --- FIREBASE INITIALIZATION ---
         const initializeFirebase = async () => {
@@ -638,7 +715,7 @@
                 userPhoto.src = user.photoURL || 'https://placehold.co/40x40/667eea/ffffff?text=U';
                 userName.textContent = user.displayName || 'Usuario';
                 userEmail.textContent = user.email;
-                enableUI(); 
+                enableUI();
             } else {
                 authWall.classList.remove('hidden');
                 appContent.classList.add('hidden');
