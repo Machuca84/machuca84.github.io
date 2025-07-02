@@ -437,10 +437,29 @@
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- START OF YOUR APP LOGIC ---
+        
+        // --- 1. CONFIGURACIÓN DE FIREBASE ---
+        // PEGA AQUÍ EL OBJETO 'firebaseConfig' QUE COPIASTE DE LA CONSOLA DE FIREBASE
+        // Ejemplo:
+        // const firebaseConfig = {
+        //   apiKey: "...",
+        //   authDomain: "...",
+        //   projectId: "...",
+        //   ...
+        // };
+        const firebaseConfig = {
+  apiKey: "AIzaSy...xxxxxxxx",
+  authDomain: "gestor-de-pagos-xxxx.firebaseapp.com",
+  projectId: "gestor-de-pagos-xxxx",
+  storageBucket: "gestor-de-pagos-xxxx.appspot.com",
+  messagingSenderId: "...",
+  appId: "1:...:web:..."
+};
+         // ¡REEMPLAZA ESTO!
 
         // Firebase references
         let db, auth;
@@ -538,9 +557,10 @@
         // --- FIREBASE INITIALIZATION ---
         const initializeFirebase = async () => {
             try {
-                // These variables are provided by the environment.
-                const firebaseConfig = JSON.parse(__firebase_config);
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                // Check if firebaseConfig is populated
+                if (!firebaseConfig.apiKey) {
+                    throw new Error("La configuración de Firebase no ha sido añadida al código.");
+                }
                 
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
@@ -553,18 +573,13 @@
                         // User is authenticated, now we can fetch data.
                         loadAndListenForData();
                     } else {
-                        console.log("User is not signed in. Authenticating...");
-                        // If __initial_auth_token is available, use it. Otherwise, sign in anonymously.
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
+                        console.log("User is not signed in. Authenticating anonymously...");
+                        await signInAnonymously(auth);
                     }
                 });
             } catch (error) {
                 console.error("Firebase initialization failed:", error);
-                createPageNotification("Error de Conexión", "error", "No se pudo conectar a la base de datos.");
+                createPageNotification(error.message, "error", "Error de Conexión");
             }
         };
 
@@ -575,9 +590,9 @@
             if (paymentsUnsubscribe) paymentsUnsubscribe();
             if (installmentsUnsubscribe) installmentsUnsubscribe();
 
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const paymentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'payments');
-            const installmentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'futureInstallments');
+            // The data path now only needs the userId
+            const paymentsCollectionRef = collection(db, 'users', userId, 'payments');
+            const installmentsCollectionRef = collection(db, 'users', userId, 'futureInstallments');
 
             // Listen for real-time updates on payments
             paymentsUnsubscribe = onSnapshot(paymentsCollectionRef, (snapshot) => {
@@ -614,13 +629,11 @@
             const dueDate = parseInt(paymentDayInput.value);
             const amount = paymentAmountInput.value ? parseFloat(paymentAmountInput.value) : null;
             if (!name || !dueDate) return;
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             
             try {
                 if (id) {
                     // UPDATING an existing payment
-                    const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', id);
+                    const paymentRef = doc(db, 'users', userId, 'payments', id);
                     const displayDate = new Date();
                     displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset);
                     const displayMonthKey = getMonthYearKey(displayDate);
@@ -646,7 +659,7 @@
                         notificationsSent: {}, 
                         createdAt: getMonthYearKey(creationDate)
                     };
-                    const paymentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'payments');
+                    const paymentsCollectionRef = collection(db, 'users', userId, 'payments');
                     await addDoc(paymentsCollectionRef, newPayment);
                     createPageNotification("Pago agregado con éxito.", "success");
                 }
@@ -664,9 +677,8 @@
 
         const deletePayment = async (id) => {
             if (!userId) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             try {
-                const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', id);
+                const paymentRef = doc(db, 'users', userId, 'payments', id);
                 await deleteDoc(paymentRef);
                 createPageNotification("Pago eliminado.", "success");
                 // onSnapshot will handle the UI update
@@ -678,7 +690,6 @@
 
         const togglePaymentStatus = async (id, markAsPaid) => {
             if (!userId) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
             
             const displayDate = new Date(); 
             displayDate.setMonth(displayDate.getMonth() + selectedMonthOffset); 
@@ -692,7 +703,7 @@
             }
 
             try {
-                const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', id);
+                const paymentRef = doc(db, 'users', userId, 'payments', id);
                 // Use dot notation to update a field in a map
                 await updateDoc(paymentRef, {
                     [`paidMonths.${displayMonthKey}`]: markAsPaid
@@ -715,8 +726,7 @@
                  throw new Error("El año o mes extraído del resumen no es válido.");
             }
             
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-            const installmentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'futureInstallments');
+            const installmentsCollectionRef = collection(db, 'users', userId, 'futureInstallments');
             const batch = writeBatch(db);
             let newInstallmentsCount = 0;
 
@@ -772,21 +782,20 @@
                         const importedPayments = Array.isArray(data) ? data : (data.payments || []);
                         const importedInstallments = Array.isArray(data) ? [] : (data.futureInstallments || []);
 
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         const batch = writeBatch(db);
 
                         // Delete existing data (optional, but good for a clean import)
-                        payments.forEach(p => batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'payments', p.id)));
-                        futureInstallments.forEach(i => batch.delete(doc(db, 'artifacts', appId, 'users', userId, 'futureInstallments', i.id)));
+                        payments.forEach(p => batch.delete(doc(db, 'users', userId, 'payments', p.id)));
+                        futureInstallments.forEach(i => batch.delete(doc(db, 'users', userId, 'futureInstallments', i.id)));
 
                         // Add new data
-                        const paymentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'payments');
+                        const paymentsCollectionRef = collection(db, 'users', userId, 'payments');
                         importedPayments.forEach(p => {
                             const { id, ...paymentData } = p; // Don't store the old ID
                             batch.set(doc(paymentsCollectionRef), paymentData);
                         });
 
-                        const installmentsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'futureInstallments');
+                        const installmentsCollectionRef = collection(db, 'users', userId, 'futureInstallments');
                         importedInstallments.forEach(i => {
                              const { id, ...installmentData } = i;
                              batch.set(doc(installmentsCollectionRef, id), installmentData); // Use the original ID for installments
@@ -898,8 +907,7 @@
                     if (!p.notificationsSent[notificationKey]) {
                         navigator.serviceWorker.ready.then(reg => reg.showNotification(`Vencimiento: ${p.name}`, { body: daysUntilDue === 0 ? `Tu pago vence hoy.` : `Tu pago vence en ${daysUntilDue} día(s).`, icon: 'images/icon-192x192.png', tag: notificationKey }));
                         // This should also be updated in Firestore
-                        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        const paymentRef = doc(db, 'artifacts', appId, 'users', userId, 'payments', p.id);
+                        const paymentRef = doc(db, 'users', userId, 'payments', p.id);
                         updateDoc(paymentRef, { [`notificationsSent.${notificationKey}`]: true });
                     }
                 }
