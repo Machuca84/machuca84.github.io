@@ -537,7 +537,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
 
         // --- START OF YOUR APP LOGIC ---
@@ -715,7 +715,7 @@
                 userPhoto.src = user.photoURL || 'https://placehold.co/40x40/667eea/ffffff?text=U';
                 userName.textContent = user.displayName || 'Usuario';
                 userEmail.textContent = user.email;
-                enableUI();
+                enableUI(); 
             } else {
                 authWall.classList.remove('hidden');
                 appContent.classList.add('hidden');
@@ -1557,6 +1557,40 @@
             modifyApiKeyBtn.addEventListener('click', () => { showApiKeyModal(false); closeMenu(); });
             apiKeyForm.addEventListener('submit', handleSaveApiKey);
             apiKeyModalCancelBtn.addEventListener('click', hideApiKeyModal);
+
+            notificationSettingsBtn.addEventListener('click', () => {
+                showView('notificationSettingsView');
+                closeMenu();
+            });
+
+            closeNotificationSettingsBtn.addEventListener('click', () => {
+                showView('mainContent');
+            });
+
+            notificationSettingsForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!isAuthReady) {
+                    createPageNotification("Debes iniciar sesión para guardar los ajustes.", "warning");
+                    return;
+                }
+
+                const settings = {
+                    preferredTime: notificationTime.value,
+                    notifyDayBefore: notifyDayBefore.checked,
+                    notifyOnDueDate: notifyOnDueDate.checked,
+                    remindIfPending: remindIfPending.checked
+                };
+
+                try {
+                    const userDocRef = doc(db, 'users', userId);
+                    await setDoc(userDocRef, { notificationSettings: settings }, { merge: true });
+                    createPageNotification("Ajustes de notificación guardados con éxito.", "success");
+                    showView('mainContent');
+                } catch (error) {
+                    console.error("Error saving notification settings:", error);
+                    createPageNotification("No se pudieron guardar los ajustes.", "error");
+                }
+            });
 
             applyTheme(localStorage.getItem('theme') || 'light');
             // Initial render is now triggered by the auth state change
