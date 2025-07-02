@@ -113,6 +113,7 @@
         #sideMenu { z-index: 50; }
         #longPressModal, #confirmationModal, #apiKeyModal { z-index: 60; }
         #loadingModal { z-index: 70; }
+        #loadingScreen { z-index: 80; }
 
 
         #longPressModal {
@@ -176,359 +177,368 @@
     </style>
 </head>
 <body class="antialiased">
-    <!-- Contenido HTML (sin cambios, se mantienen los originales) -->
-    <input type="file" id="importFile" accept=".json" style="display: none;">
-    <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
+    <!-- Pantalla de Carga Inicial -->
+    <div id="loadingScreen" class="fixed inset-0 flex flex-col justify-center items-center bg-slate-100 dark:bg-slate-900">
+        <svg class="w-20 h-20 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 3V9" />
+        </svg>
+        <p class="mt-4 text-slate-600 dark:text-slate-300">Cargando Gestor de Pagos...</p>
+    </div>
 
+    <!-- Contenido Principal (oculto por defecto) -->
+    <div id="pageContent" class="hidden">
+        <input type="file" id="importFile" accept=".json" style="display: none;">
+        <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
 
-    <div id="menuOverlay" class="fixed inset-0 bg-black opacity-0 hidden"></div>
-    <div id="sideMenu" class="h-full w-64 sm:w-72 bg-white dark:bg-slate-800 shadow-xl p-4 flex flex-col">
-        <!-- User Info / Sign Out Section -->
-        <div id="userInfo" class="hidden flex-shrink-0 border-b dark:border-slate-700 pb-4 mb-4">
-            <div class="flex items-center">
-                <img id="userPhoto" class="h-10 w-10 rounded-full" src="" alt="User photo">
-                <div class="ml-3">
-                    <p id="userName" class="text-sm font-medium text-slate-900 dark:text-slate-100"></p>
-                    <p id="userEmail" class="text-xs text-slate-500 dark:text-slate-400"></p>
+        <div id="menuOverlay" class="fixed inset-0 bg-black opacity-0 hidden"></div>
+        <div id="sideMenu" class="h-full w-64 sm:w-72 bg-white dark:bg-slate-800 shadow-xl p-4 flex flex-col">
+            <!-- User Info / Sign Out Section -->
+            <div id="userInfo" class="hidden flex-shrink-0 border-b dark:border-slate-700 pb-4 mb-4">
+                <div class="flex items-center">
+                    <img id="userPhoto" class="h-10 w-10 rounded-full" src="" alt="User photo">
+                    <div class="ml-3">
+                        <p id="userName" class="text-sm font-medium text-slate-900 dark:text-slate-100"></p>
+                        <p id="userEmail" class="text-xs text-slate-500 dark:text-slate-400"></p>
+                    </div>
                 </div>
-            </div>
-            <button id="signOutBtn" class="w-full mt-4 text-left flex items-center py-2 px-3 rounded-md text-sm text-slate-700 hover:bg-red-50 dark:text-slate-200 dark:hover:bg-red-900/50 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Cerrar Sesión
-            </button>
-        </div>
-
-        <div class="flex-shrink-0">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400">Menú</h2>
-                <button id="closeMenuBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                <button id="signOutBtn" class="w-full mt-4 text-left flex items-center py-2 px-3 rounded-md text-sm text-slate-700 hover:bg-red-50 dark:text-slate-200 dark:hover:bg-red-900/50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
+                    Cerrar Sesión
                 </button>
             </div>
-            <nav>
-                <ul class="space-y-1">
-                    <li>
-                        <button id="analyzeSummaryBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" />
-                            </svg>
-                            Analizar Resumen
-                        </button>
-                    </li>
-                    <li>
-                        <button id="showFutureInstallmentsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Análisis de Cuotas
-                        </button>
-                    </li>
-                    <li>
-                        <a href="#" id="showHistoryBtn" class="flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors opacity-50 pointer-events-none">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            Historial Pagos
-                        </a>
-                    </li>
-                    <li>
-                        <button id="notificationSettingsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Ajustes de Notificaciones
-                        </button>
-                    </li>
-                    <li>
-                        <button id="enableNotificationsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                            <span id="notificationsBtnText">Activar Notificaciones</span>
-                        </button>
-                    </li>
-                    <li>
-                        <button id="modifyApiKeyBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 017.743-5.743M15 7a2 2 0 002-2m0 0A2 2 0 0015 3m0 0A2 2 0 0013 5" />
-                            </svg>
-                            Modificar Clave API
-                        </button>
-                    </li>
-                    <li>
-                        <button id="exportDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                            Exportar Datos
-                        </button>
-                    </li>
-                    <li>
-                        <button id="importDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                            Importar Datos
-                        </button>
-                    </li>
-                    <li>
-                        <button id="exportCalendarBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            Exportar a Calendario
-                        </button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </div>
 
-    <div id="viewWrapper" class="relative">
-        <div id="mainContent" class="view-container container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
-             <header class="mb-6 flex items-center justify-between h-16">
-                <div class="flex-shrink-0 w-12">
-                    <button id="hamburgerBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Abrir menú">
+            <div class="flex-shrink-0">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-semibold text-indigo-600 dark:text-indigo-400">Menú</h2>
+                    <button id="closeMenuBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
-                <div class="flex-grow text-center px-2">
-                    <h1 class="font-bold whitespace-nowrap" style="font-size: clamp(1.125rem, 5.5vw, 1.5rem);">Gestor de Pagos</h1>
-                </div>
-                 <div class="flex-shrink-0 w-12 flex justify-end items-center">
-                    <button id="themeToggleBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Cambiar tema">
-                        <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                        </svg>
-                        <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
+                <nav>
+                    <ul class="space-y-1">
+                        <li>
+                            <button id="analyzeSummaryBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 21h7a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v11m0 5l4.879-4.879m0 0a3 3 0 104.243-4.242 3 3 0 00-4.243 4.242z" />
+                                </svg>
+                                Analizar Resumen
+                            </button>
+                        </li>
+                        <li>
+                            <button id="showFutureInstallmentsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                Análisis de Cuotas
+                            </button>
+                        </li>
+                        <li>
+                            <a href="#" id="showHistoryBtn" class="flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors opacity-50 pointer-events-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                Historial Pagos
+                            </a>
+                        </li>
+                        <li>
+                            <button id="notificationSettingsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.096 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Ajustes de Notificaciones
+                            </button>
+                        </li>
+                        <li>
+                            <button id="enableNotificationsBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                                <span id="notificationsBtnText">Activar Notificaciones</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button id="modifyApiKeyBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H5v-2H3v-2H1v-4a6 6 0 017.743-5.743M15 7a2 2 0 002-2m0 0A2 2 0 0015 3m0 0A2 2 0 0013 5" />
+                                </svg>
+                                Modificar Clave API
+                            </button>
+                        </li>
+                        <li>
+                            <button id="exportDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                Exportar Datos
+                            </button>
+                        </li>
+                        <li>
+                            <button id="importDataBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                Importar Datos
+                            </button>
+                        </li>
+                        <li>
+                            <button id="exportCalendarBtn" class="w-full text-left flex items-center py-2.5 px-4 rounded-md text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700 dark:hover:text-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                Exportar a Calendario
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+
+        <div id="viewWrapper" class="relative">
+            <div id="mainContent" class="view-container container mx-auto p-4 sm:p-6 md:p-8 max-w-3xl">
+                 <header class="mb-6 flex items-center justify-between h-16">
+                    <div class="flex-shrink-0 w-12">
+                        <button id="hamburgerBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Abrir menú">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="flex-grow text-center px-2">
+                        <h1 class="font-bold whitespace-nowrap" style="font-size: clamp(1.125rem, 5.5vw, 1.5rem);">Gestor de Pagos</h1>
+                    </div>
+                     <div class="flex-shrink-0 w-12 flex justify-end items-center">
+                        <button id="themeToggleBtn" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors" title="Cambiar tema">
+                            <svg id="sunIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                            </svg>
+                            <svg id="moonIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                            </svg>
+                        </button>
+                    </div>
+                </header>
+                
+                <!-- Auth Wall -->
+                <div id="authWall" class="text-center py-10 hidden">
+                    <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Bienvenido al Gestor de Pagos</h2>
+                    <p class="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">Para guardar tus datos de forma segura y sincronizarlos, inicia sesión con tu cuenta de Google.</p>
+                    <button id="signInBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,36.218,44,30.668,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                        Iniciar Sesión con Google
                     </button>
                 </div>
-            </header>
+
+                <!-- Main App Content (hidden until signed in) -->
+                <div id="appContent" class="hidden">
+                    <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
+                        <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
+                            &lt; Anterior
+                        </button>
+                        <div class="text-center">
+                            <p class="text-sm font-medium text-slate-500">Visualizando:</p>
+                            <p id="displayedMonthLabel" class="text-lg font-bold text-indigo-600">Mes Actual</p>
+                        </div>
+                        <button id="nextMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm" title="Mes Siguiente">
+                            Siguiente &gt;
+                        </button>
+                    </div>
+                    
+                    <div id="paymentSummary" class="mb-6 summary-card text-white shadow-lg rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                        <div class="text-center">
+                            <p class="text-sm uppercase tracking-wider opacity-80">Total Estimado (<span id="summaryTotalLabel"></span>)</p>
+                            <p id="totalAmountDisplay" class="text-2xl font-bold">$0.00</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-sm uppercase tracking-wider opacity-80">Pendiente (<span id="summaryPendingLabel"></span>)</p>
+                            <p id="pendingAmountDisplay" class="text-2xl font-bold text-yellow-300">$0.00</p>
+                        </div>
+                    </div>
+                    
+                    <div id="notificationsArea" class="mb-6 space-y-3"></div>
+
+                    <div class="mb-6 text-center">
+                         <button id="toggleFormBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                 <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                             </svg>
+                             <span id="toggleFormBtnText">Agregar Nuevo Pago</span>
+                         </button>
+                    </div>
+
+                    <div id="addPaymentFormContainer" class="mb-8">
+                         <div class="bg-white shadow-xl rounded-xl p-6">
+                             <h2 id="formTitle" class="text-2xl font-semibold border-b pb-3">Agregar Nuevo Pago</h2>
+                             <form id="addPaymentForm" class="space-y-4 mt-5">
+                                 <input type="hidden" id="editingPaymentId">
+                                 <div>
+                                     <label for="paymentName" class="block text-sm font-medium">Nombre del Pago:</label>
+                                     <input type="text" id="paymentName" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: Tarjeta de Crédito Visa">
+                                 </div>
+                                 <div>
+                                     <label for="paymentDay" class="block text-sm font-medium">Día de Vencimiento (1-31):</label>
+                                     <input type="number" id="paymentDay" min="1" max="31" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 15">
+                                 </div>
+                                 <div>
+                                     <label for="paymentAmount" class="block text-sm font-medium">Monto (ARS, opcional):</label>
+                                     <input type="number" id="paymentAmount" step="0.01" min="0" class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 5000.00">
+                                 </div>
+                                 <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                                     <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg inline-flex items-center justify-center">
+                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                         <span id="addEditButtonText">Guardar Pago</span>
+                                     </button>
+                                     <button type="button" id="cancelAddBtn" class="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg inline-flex items-center justify-center">
+                                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                                         Cancelar
+                                     </button>
+                                 </div>
+                             </form>
+                         </div>
+                    </div>
+
+                    <div>
+                        <h2 id="paymentsListTitle" class="text-2xl font-semibold mb-5 border-b pb-3">Pagos Registrados (Mes Actual)</h2>
+                        <div id="paymentsList" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="historyView" class="view-container hidden p-4 sm:p-6 md:p-8">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Historial de Pagos</h1>
+                        <button id="closeHistoryBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                            Cerrar
+                        </button>
+                    </div>
+                    <div id="historicalPaymentsListContainer" class="space-y-6">
+                    </div>
+                </div>
+            </div>
             
-            <!-- Auth Wall -->
-            <div id="authWall" class="text-center py-10">
-                <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Bienvenido al Gestor de Pagos</h2>
-                <p class="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">Para guardar tus datos de forma segura y sincronizarlos, inicia sesión con tu cuenta de Google.</p>
-                <button id="signInBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center">
-                    <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,36.218,44,30.668,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
-                    Iniciar Sesión con Google
-                </button>
+            <div id="futureInstallmentsView" class="view-container hidden p-4 sm:p-6 md:p-8">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Análisis de Cuotas Futuras</h1>
+                        <button id="closeFutureInstallmentsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                            Cerrar
+                        </button>
+                    </div>
+                    <div id="chartCard" class="rounded-lg shadow-xl p-4 sm:p-6 mb-6">
+                        <h2 class="text-xl font-semibold mb-4">Proyección de Gastos en Cuotas</h2>
+                        <div id="installmentsChartContainer" class="relative h-96">
+                            <canvas id="installmentsChart"></canvas>
+                        </div>
+                    </div>
+                    <div id="futureInstallmentsListContainer" class="space-y-6">
+                    </div>
+                </div>
             </div>
-
-            <!-- Main App Content (hidden until signed in) -->
-            <div id="appContent" class="hidden">
-                <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
-                    <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
-                        &lt; Anterior
-                    </button>
-                    <div class="text-center">
-                        <p class="text-sm font-medium text-slate-500">Visualizando:</p>
-                        <p id="displayedMonthLabel" class="text-lg font-bold text-indigo-600">Mes Actual</p>
+            
+            <!-- Vista de Ajustes de Notificaciones -->
+            <div id="notificationSettingsView" class="view-container hidden p-4 sm:p-6 md:p-8">
+                <div class="max-w-3xl mx-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Ajustes de Notificaciones</h1>
+                        <button id="closeNotificationSettingsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
+                            Cerrar
+                        </button>
                     </div>
-                    <button id="nextMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm" title="Mes Siguiente">
-                        Siguiente &gt;
-                    </button>
-                </div>
-                
-                <div id="paymentSummary" class="mb-6 summary-card text-white shadow-lg rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                    <div class="text-center">
-                        <p class="text-sm uppercase tracking-wider opacity-80">Total Estimado (<span id="summaryTotalLabel"></span>)</p>
-                        <p id="totalAmountDisplay" class="text-2xl font-bold">$0.00</p>
+                    <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6">
+                        <form id="notificationSettingsForm" class="space-y-6">
+                            <div>
+                                <label for="notificationTime" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Hora del recordatorio principal</label>
+                                <select id="notificationTime" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                    <option value="09:00">09:00 AM</option>
+                                    <option value="12:00">12:00 PM</option>
+                                    <option value="18:00">06:00 PM</option>
+                                </select>
+                                <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Elige la hora en que prefieres recibir los avisos de vencimiento.</p>
+                            </div>
+                            
+                            <div class="relative flex items-start">
+                                <div class="flex h-6 items-center">
+                                    <input id="notifyDayBefore" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                </div>
+                                <div class="ml-3 text-sm leading-6">
+                                    <label for="notifyDayBefore" class="font-medium text-gray-900 dark:text-gray-100">Avisar el día anterior</label>
+                                    <p class="text-gray-500 dark:text-gray-400">Recibir una notificación un día antes del vencimiento.</p>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-start">
+                                <div class="flex h-6 items-center">
+                                    <input id="notifyOnDueDate" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                </div>
+                                <div class="ml-3 text-sm leading-6">
+                                    <label for="notifyOnDueDate" class="font-medium text-gray-900 dark:text-gray-100">Avisar el día del vencimiento</label>
+                                    <p class="text-gray-500 dark:text-gray-400">Recibir la notificación principal el día que vence el pago.</p>
+                                </div>
+                            </div>
+
+                            <div class="relative flex items-start">
+                                <div class="flex h-6 items-center">
+                                    <input id="remindIfPending" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+                                </div>
+                                <div class="ml-3 text-sm leading-6">
+                                    <label for="remindIfPending" class="font-medium text-gray-900 dark:text-gray-100">Insistir si está pendiente</label>
+                                    <p class="text-gray-500 dark:text-gray-400">Recibir recordatorios adicionales si no has marcado el pago como realizado.</p>
+                                </div>
+                            </div>
+
+                            <div class="pt-4">
+                                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg">Guardar Ajustes</button>
+                            </div>
+                        </form>
                     </div>
-                    <div class="text-center">
-                        <p class="text-sm uppercase tracking-wider opacity-80">Pendiente (<span id="summaryPendingLabel"></span>)</p>
-                        <p id="pendingAmountDisplay" class="text-2xl font-bold text-yellow-300">$0.00</p>
-                    </div>
-                </div>
-                
-                <div id="notificationsArea" class="mb-6 space-y-3"></div>
-
-                <div class="mb-6 text-center">
-                     <button id="toggleFormBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-5 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-150 shadow-md hover:shadow-lg inline-flex items-center">
-                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                         </svg>
-                         <span id="toggleFormBtnText">Agregar Nuevo Pago</span>
-                     </button>
-                </div>
-
-                <div id="addPaymentFormContainer" class="mb-8">
-                     <div class="bg-white shadow-xl rounded-xl p-6">
-                         <h2 id="formTitle" class="text-2xl font-semibold border-b pb-3">Agregar Nuevo Pago</h2>
-                         <form id="addPaymentForm" class="space-y-4 mt-5">
-                             <input type="hidden" id="editingPaymentId">
-                             <div>
-                                 <label for="paymentName" class="block text-sm font-medium">Nombre del Pago:</label>
-                                 <input type="text" id="paymentName" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: Tarjeta de Crédito Visa">
-                             </div>
-                             <div>
-                                 <label for="paymentDay" class="block text-sm font-medium">Día de Vencimiento (1-31):</label>
-                                 <input type="number" id="paymentDay" min="1" max="31" required class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 15">
-                             </div>
-                             <div>
-                                 <label for="paymentAmount" class="block text-sm font-medium">Monto (ARS, opcional):</label>
-                                 <input type="number" id="paymentAmount" step="0.01" min="0" class="mt-1 block w-full px-4 py-2.5 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="Ej: 5000.00">
-                             </div>
-                             <div class="flex flex-col sm:flex-row gap-3 pt-2">
-                                 <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg inline-flex items-center justify-center">
-                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                                     <span id="addEditButtonText">Guardar Pago</span>
-                                 </button>
-                                 <button type="button" id="cancelAddBtn" class="flex-1 bg-slate-500 hover:bg-slate-600 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg inline-flex items-center justify-center">
-                                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
-                                     Cancelar
-                                 </button>
-                             </div>
-                         </form>
-                     </div>
-                </div>
-
-                <div>
-                    <h2 id="paymentsListTitle" class="text-2xl font-semibold mb-5 border-b pb-3">Pagos Registrados (Mes Actual)</h2>
-                    <div id="paymentsList" class="space-y-4"></div>
                 </div>
             </div>
         </div>
 
-        <div id="historyView" class="view-container hidden p-4 sm:p-6 md:p-8">
-            <div class="max-w-3xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Historial de Pagos</h1>
-                    <button id="closeHistoryBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-                        Cerrar
-                    </button>
-                </div>
-                <div id="historicalPaymentsListContainer" class="space-y-6">
-                </div>
-            </div>
+
+        <div id="longPressModal" class="fixed inset-0">
+             <div class="modal-content">
+                 <p id="modalItemName" class="text-center font-semibold mb-4"></p>
+                 <div class="modal-actions space-y-2">
+                     <button id="modalEditBtn" class="edit">Editar</button>
+                     <button id="modalDeleteBtn" class="delete">Eliminar</button>
+                     <button id="modalCancelBtn" class="cancel">Cancelar</button>
+                 </div>
+             </div>
         </div>
         
-        <div id="futureInstallmentsView" class="view-container hidden p-4 sm:p-6 md:p-8">
-            <div class="max-w-3xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Análisis de Cuotas Futuras</h1>
-                    <button id="closeFutureInstallmentsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-                        Cerrar
-                    </button>
-                </div>
-                <div id="chartCard" class="rounded-lg shadow-xl p-4 sm:p-6 mb-6">
-                    <h2 class="text-xl font-semibold mb-4">Proyección de Gastos en Cuotas</h2>
-                    <div id="installmentsChartContainer" class="relative h-96">
-                        <canvas id="installmentsChart"></canvas>
+        <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+             <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-11/12 max-w-sm">
+                 <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Confirmación</h3>
+                 <p id="confirmationModalMessage" class="text-slate-600 dark:text-slate-300 mb-6"></p>
+                 <div class="flex justify-end space-x-4">
+                     <button id="confirmationModalCancelBtn" class="px-4 py-2 rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 font-medium transition-colors">Cancelar</button>
+                     <button id="confirmationModalConfirmBtn" class="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 font-medium transition-colors">Confirmar</button>
+                 </div>
+             </div>
+        </div>
+
+        <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center">
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8 flex flex-col items-center gap-4">
+                <div class="spinner"></div>
+                <p id="loadingModalText" class="text-slate-700 dark:text-slate-200 font-medium text-center">Analizando resumen...</p>
+            </div>
+        </div>
+
+        <div id="apiKeyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
+            <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+               <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Se necesita una Clave API</h3>
+               <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
+                    Para analizar automáticamente tu resumen de gastos, esta aplicación utiliza la IA de Google.
+                    Necesitas una Clave API de Gemini, que es gratuita.
+                   <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
+                       Obtén tu clave aquí &rarr;
+                   </a>
+               </p>
+               <form id="apiKeyForm">
+                    <label for="modalApiKeyInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Clave API de Gemini</label>
+                    <input type="password" id="modalApiKeyInput" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Pega tu clave aquí">
+                    <div class="flex justify-end space-x-4 mt-6">
+                        <button type="button" id="apiKeyModalCancelBtn" class="px-4 py-2 rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 font-medium transition-colors">Cancelar</button>
+                        <button type="submit" id="apiKeyModalSaveBtn" class="px-4 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 font-medium transition-colors">Guardar y Continuar</button>
                     </div>
-                </div>
-                <div id="futureInstallmentsListContainer" class="space-y-6">
-                </div>
+               </form>
             </div>
-        </div>
-        
-        <!-- Vista de Ajustes de Notificaciones -->
-        <div id="notificationSettingsView" class="view-container hidden p-4 sm:p-6 md:p-8">
-            <div class="max-w-3xl mx-auto">
-                <div class="flex justify-between items-center mb-6">
-                    <h1 class="text-3xl font-bold text-slate-800 dark:text-slate-100">Ajustes de Notificaciones</h1>
-                    <button id="closeNotificationSettingsBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors">
-                        Cerrar
-                    </button>
-                </div>
-                <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6">
-                    <form id="notificationSettingsForm" class="space-y-6">
-                        <div>
-                            <label for="notificationTime" class="block text-sm font-medium text-slate-700 dark:text-slate-200">Hora del recordatorio principal</label>
-                            <select id="notificationTime" class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                                <option value="09:00">09:00 AM</option>
-                                <option value="12:00">12:00 PM</option>
-                                <option value="18:00">06:00 PM</option>
-                            </select>
-                            <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Elige la hora en que prefieres recibir los avisos de vencimiento.</p>
-                        </div>
-                        
-                        <div class="relative flex items-start">
-                            <div class="flex h-6 items-center">
-                                <input id="notifyDayBefore" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
-                            </div>
-                            <div class="ml-3 text-sm leading-6">
-                                <label for="notifyDayBefore" class="font-medium text-gray-900 dark:text-gray-100">Avisar el día anterior</label>
-                                <p class="text-gray-500 dark:text-gray-400">Recibir una notificación un día antes del vencimiento.</p>
-                            </div>
-                        </div>
-
-                        <div class="relative flex items-start">
-                            <div class="flex h-6 items-center">
-                                <input id="notifyOnDueDate" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
-                            </div>
-                            <div class="ml-3 text-sm leading-6">
-                                <label for="notifyOnDueDate" class="font-medium text-gray-900 dark:text-gray-100">Avisar el día del vencimiento</label>
-                                <p class="text-gray-500 dark:text-gray-400">Recibir la notificación principal el día que vence el pago.</p>
-                            </div>
-                        </div>
-
-                        <div class="relative flex items-start">
-                            <div class="flex h-6 items-center">
-                                <input id="remindIfPending" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
-                            </div>
-                            <div class="ml-3 text-sm leading-6">
-                                <label for="remindIfPending" class="font-medium text-gray-900 dark:text-gray-100">Insistir si está pendiente</label>
-                                <p class="text-gray-500 dark:text-gray-400">Recibir recordatorios adicionales si no has marcado el pago como realizado.</p>
-                            </div>
-                        </div>
-
-                        <div class="pt-4">
-                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 shadow-md hover:shadow-lg">Guardar Ajustes</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-    <div id="longPressModal" class="fixed inset-0">
-         <div class="modal-content">
-             <p id="modalItemName" class="text-center font-semibold mb-4"></p>
-             <div class="modal-actions space-y-2">
-                 <button id="modalEditBtn" class="edit">Editar</button>
-                 <button id="modalDeleteBtn" class="delete">Eliminar</button>
-                 <button id="modalCancelBtn" class="cancel">Cancelar</button>
-             </div>
-         </div>
-    </div>
-    
-    <div id="confirmationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-         <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-11/12 max-w-sm">
-             <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Confirmación</h3>
-             <p id="confirmationModalMessage" class="text-slate-600 dark:text-slate-300 mb-6"></p>
-             <div class="flex justify-end space-x-4">
-                 <button id="confirmationModalCancelBtn" class="px-4 py-2 rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 font-medium transition-colors">Cancelar</button>
-                 <button id="confirmationModalConfirmBtn" class="px-4 py-2 rounded-md text-white bg-red-600 hover:bg-red-700 font-medium transition-colors">Confirmar</button>
-             </div>
-         </div>
-    </div>
-
-    <div id="loadingModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center">
-        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-8 flex flex-col items-center gap-4">
-            <div class="spinner"></div>
-            <p id="loadingModalText" class="text-slate-700 dark:text-slate-200 font-medium text-center">Analizando resumen...</p>
-        </div>
-    </div>
-
-    <div id="apiKeyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-           <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">Se necesita una Clave API</h3>
-           <p class="text-sm text-slate-600 dark:text-slate-300 mb-4">
-                Para analizar automáticamente tu resumen de gastos, esta aplicación utiliza la IA de Google.
-                Necesitas una Clave API de Gemini, que es gratuita.
-               <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
-                   Obtén tu clave aquí &rarr;
-               </a>
-           </p>
-           <form id="apiKeyForm">
-                <label for="modalApiKeyInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300">Clave API de Gemini</label>
-                <input type="password" id="modalApiKeyInput" required class="mt-1 block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Pega tu clave aquí">
-                <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" id="apiKeyModalCancelBtn" class="px-4 py-2 rounded-md text-slate-700 bg-slate-200 hover:bg-slate-300 dark:bg-slate-600 dark:text-slate-200 dark:hover:bg-slate-500 font-medium transition-colors">Cancelar</button>
-                    <button type="submit" id="apiKeyModalSaveBtn" class="px-4 py-2 rounded-md text-white bg-indigo-600 hover:bg-indigo-700 font-medium transition-colors">Guardar y Continuar</button>
-                </div>
-           </form>
         </div>
     </div>
 
@@ -537,7 +547,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-messaging.js";
 
         // --- START OF YOUR APP LOGIC ---
@@ -661,6 +671,8 @@
         const notifyDayBefore = document.getElementById('notifyDayBefore');
         const notifyOnDueDate = document.getElementById('notifyOnDueDate');
         const remindIfPending = document.getElementById('remindIfPending');
+        const loadingScreen = document.getElementById('loadingScreen');
+        const pageContent = document.getElementById('pageContent');
 
         // --- FIREBASE INITIALIZATION ---
         const initializeFirebase = async () => {
@@ -681,6 +693,9 @@
                 });
 
                 onAuthStateChanged(auth, (user) => {
+                    loadingScreen.classList.add('hidden');
+                    pageContent.classList.remove('hidden');
+
                     if (user && !user.isAnonymous) {
                         console.log("User is signed in with Google:", user.uid);
                         userId = user.uid;
@@ -715,7 +730,7 @@
                 userPhoto.src = user.photoURL || 'https://placehold.co/40x40/667eea/ffffff?text=U';
                 userName.textContent = user.displayName || 'Usuario';
                 userEmail.textContent = user.email;
-                enableUI(); 
+                enableUI();
             } else {
                 authWall.classList.remove('hidden');
                 appContent.classList.add('hidden');
