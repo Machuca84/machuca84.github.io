@@ -634,12 +634,21 @@
                 userPhoto.src = user.photoURL || 'https://placehold.co/40x40/667eea/ffffff?text=U';
                 userName.textContent = user.displayName || 'Usuario';
                 userEmail.textContent = user.email;
+                // THIS IS THE FIX: Enable the buttons when the user is logged in.
+                enableUI();
             } else {
                 // User is signed out
                 authWall.classList.remove('hidden');
                 appContent.classList.add('hidden');
                 userInfo.classList.add('hidden');
             }
+        };
+
+        const enableUI = () => {
+            document.querySelectorAll('button:disabled, a.pointer-events-none').forEach(el => {
+                el.disabled = false;
+                el.classList.remove('disabled:opacity-50', 'disabled:cursor-not-allowed', 'opacity-50', 'pointer-events-none');
+            });
         };
 
         const signInWithGoogle = async () => {
