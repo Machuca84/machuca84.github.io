@@ -83,8 +83,50 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: payload.notification.icon || '/images/icon-192x192.png'
+    icon: payload.notification.icon || '/images/icon-192x192.png',
+    // --- INICIO DE LA MODIFICACIÓN ---
+    tag: payload.data.paymentId, // Agrupa notificaciones por pago para que no se apilen
+    data: { // Pasamos la URL que se debe abrir al hacer clic
+        url: `/?paymentId=${payload.data.paymentId}`
+    },
+    actions: [
+        { action: 'open_app', title: 'Abrir App' }
+    ]
+    // --- FIN DE LA MODIFICACIÓN ---
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
+
+// --- INICIO DEL CÓDIGO NUEVO ---
+// Listener para manejar los clics en la notificación o sus acciones
+self.addEventListener('notificationclick', event => {
+    event.notification.close(); // Siempre cierra la notificación al interactuar
+
+    const urlToOpen = new URL(event.notification.data.url, self.location.origin).href;
+
+    // Esta función busca si la app ya está abierta y la enfoca. Si no, abre una nueva ventana.
+    const promiseChain = clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true
+    }).then((windowClients) => {
+        let matchingClient = null;
+
+        for (let i = 0; i < windowClients.length; i++) {
+            const windowClient = windowClients[i];
+            if (windowClient.url === urlToOpen) {
+                matchingClient = windowClient;
+                break;
+            }
+        }
+
+        if (matchingClient) {
+            return matchingClient.focus();
+        } else {
+            return clients.openWindow(urlToOpen);
+        }
+    });
+
+    event.waitUntil(promiseChain);
+});
+// --- FIN DEL CÓDIGO NUEVO ---
