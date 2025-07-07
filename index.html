@@ -1314,11 +1314,12 @@
                 historicalPaymentsListContainerEl.appendChild(monthCard);
             });
         };
-        const updateNotificationsButton = () => { /* ... same as before ... */ };
         
         const handleNotificationsPermission = async () => {
-            if (!isAuthReady) {
-                createPageNotification("Debes iniciar sesión para activar las notificaciones.", "warning");
+            // Comprobación de seguridad: Asegurarse de que el userId está disponible.
+            if (!isAuthReady || !userId) {
+                console.error("Error: Se intentó activar notificaciones sin un userId válido.");
+                createPageNotification("Por favor, espera un momento y vuelve a intentarlo. El usuario no está listo.", "error");
                 return;
             }
             
@@ -1338,9 +1339,12 @@
                     
                     if (fcmToken) {
                         console.log('FCM Token:', fcmToken);
+                        console.log('Attempting to save token for userId:', userId); // Log para verificar
+                        
                         // Guarda el token en Firestore
                         const userDocRef = doc(db, 'users', userId);
                         await setDoc(userDocRef, { fcmToken: fcmToken }, { merge: true });
+
                         console.log('FCM Token saved to Firestore.');
                         notificationsBtnText.textContent = 'Notificaciones Activadas';
                         enableNotificationsBtn.disabled = true;
