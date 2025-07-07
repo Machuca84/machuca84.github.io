@@ -1329,12 +1329,16 @@
                     console.log('Notification permission granted.');
                     createPageNotification("¡Permiso de notificaciones concedido!", "success");
                     
-                    // Get token
+                    // Espera a que el Service Worker esté completamente listo y activo.
+                    await navigator.serviceWorker.ready; 
+                    console.log('Service Worker is active and ready.');
+
+                    // Ahora sí, obtén el token de forma segura
                     const fcmToken = await getToken(messaging, { vapidKey: 'BPfuRTaZN753LdEm3nLHyHbWHD7AqBv0_mLVGl7nFZrqpb7S0ukmMOeNGIs3Cwd7Iti012rzgUAzcImzsZKIl2A' });
                     
                     if (fcmToken) {
                         console.log('FCM Token:', fcmToken);
-                        // Save the token to Firestore
+                        // Guarda el token en Firestore
                         const userDocRef = doc(db, 'users', userId);
                         await setDoc(userDocRef, { fcmToken: fcmToken }, { merge: true });
                         console.log('FCM Token saved to Firestore.');
