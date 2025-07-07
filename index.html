@@ -219,6 +219,7 @@
     </style>
 </head>
 <body class="antialiased">
+    <!-- Pantalla de Carga Inicial -->
     <div id="loadingScreen" class="fixed inset-0 flex flex-col justify-center items-center bg-slate-100 dark:bg-slate-900">
         <svg class="w-20 h-20 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25-2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m12 3V9" />
@@ -226,6 +227,7 @@
         <p class="mt-4 text-slate-600 dark:text-slate-300">Cargando Gestor de Pagos...</p>
     </div>
 
+    <!-- Contenido Principal (oculto por defecto) -->
     <div id="pageContent" class="hidden">
         <input type="file" id="importFile" accept=".json" style="display: none;">
         <input type="file" id="summaryFile" accept=".pdf,image/*" style="display: none;" multiple>
@@ -352,6 +354,7 @@
                     </div>
                 </header>
                 
+                <!-- Auth Wall -->
                 <div id="authWall" class="text-center py-10 hidden">
                     <h2 class="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Bienvenido al Gestor de Pagos</h2>
                     <p class="text-slate-600 dark:text-slate-400 mb-6 max-w-md mx-auto">Para guardar tus datos de forma segura y sincronizarlos, inicia sesión con tu cuenta de Google.</p>
@@ -361,6 +364,7 @@
                     </button>
                 </div>
 
+                <!-- Main App Content (hidden until signed in) -->
                 <div id="appContent" class="hidden">
                     <div class="mb-6 flex justify-center items-center space-x-2 p-2 bg-slate-100 rounded-lg shadow">
                         <button id="prevMonthBtn" class="month-selector-btn bg-white hover:bg-slate-200 text-slate-700 font-medium py-2 px-4 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed" title="Mes Anterior">
@@ -467,6 +471,7 @@
                 </div>
             </div>
             
+            <!-- Vista de Ajustes de Notificaciones -->
             <div id="notificationSettingsView" class="view-container hidden p-4 sm:p-6 md:p-8">
                 <div class="max-w-3xl mx-auto">
                     <div class="flex justify-between items-center mb-6">
@@ -580,6 +585,7 @@
     </div>
     <div id="exitToast">Presiona de nuevo para salir</div>
 
+    <!-- Firebase SDK -->
     <script type="module">
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
@@ -802,8 +808,18 @@
         };
 
         const signOutUser = async () => {
+            // Desconecta los listeners de Firestore PRIMERO
+            if (paymentsUnsubscribe) {
+                paymentsUnsubscribe();
+                paymentsUnsubscribe = null;
+            }
+            if (installmentsUnsubscribe) {
+                installmentsUnsubscribe();
+                installmentsUnsubscribe = null;
+            }
+
             try {
-                await signOut(auth);
+                await signOut(auth); // LUEGO, cierra la sesión
                 closeMenu();
             } catch (error) {
                 console.error("Error during sign-out:", error);
